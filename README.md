@@ -1,10 +1,10 @@
-# 🎓 MLMS-Project
+#  MLMS-Project
 
 A full-stack web application designed and developed for the internship project, featuring a complete frontend dashboard, authentication system, and backend API.
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework / Library:** React (Vite)

@@ -1,0 +1,209 @@
+/* เพิ่มเติมต่อจากของเดิม */
+.verify-info-table {
+  width: 100%;
+  margin-bottom: 25px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 500;
+  text-align: left;
+  width: 45%;
+}
+
+.info-value {
+  color: #222;
+  font-weight: bold;
+  text-align: right;
+  width: 55%;
+}
+
+.code-font {
+  font-family: monospace;
+  color: #1a237e;
+}
+
+.uuid-title {
+  margin: 0 0 5px 0 !important;
+  font-size: 11px !important;
+}
+
+.invalid-bg {
+  background-color: #ffebee; 
+}
+
+.error-title {
+  color: #c62828 !important;
+}
+
+.error-icon {
+  font-size: 60px;
+}
+
+.error-details-box {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #c62828;
+  color: #c62828;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.error-btn {
+  background-color: #c62828 !important;
+}
+.error-btn:hover {
+  background-color: #b71c1c !important;
+}
+
+/* =========================================
+   VERIFICATION TABLE & INFO ROWS (RESPONSIVE)
+   ========================================= */
+.verify-info-table {
+  width: 100%;
+  margin-bottom: 25px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 500;
+  text-align: left;
+  flex: 1 1 40%;
+}
+
+.info-value {
+  color: #222;
+  font-weight: bold;
+  text-align: right;
+  flex: 1 1 60%;
+  word-break: break-word; /* ตัดคำอัตโนมัติถ้าข้อยาว */
+}
+
+.code-font {
+  font-family: monospace;
+  color: #1a237e;
+  word-break: break-all; /* ป้องกันรหัสยาวล้นจอ */
+}
+
+.uuid-title {
+  margin: 0 0 5px 0 !important;
+  font-size: 11px !important;
+}
+
+/* =========================================
+   ERROR STATE & NOTIFICATIONS
+   ========================================= */
+.invalid-bg {
+  background-color: #ffebee; 
+}
+
+.error-title {
+  color: #c62828 !important;
+}
+
+.error-icon {
+  font-size: 60px;
+}
+
+.error-details-box {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #c62828;
+  color: #c62828;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  text-align: center;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+.error-btn {
+  background-color: #c62828 !important;
+}
+
+.error-btn:hover {
+  background-color: #b71c1c !important;
+}
+
+/* =========================================
+   RESPONSIVE BREAKPOINTS (MOBILE & TABLET)
+   ========================================= */
+
+/* สำหรับมือถือขนาดเล็ก (<= 480px) */
+@media (max-width: 480px) {
+  .verify-info-table {
+    margin-bottom: 18px;
+  }
+
+  .info-row {
+    padding: 10px 12px;
+    font-size: 13px;
+    /* สลับเป็นบน-ล่าง ถ้าเนื้อหาฝั่งขวายาว */
+    flex-wrap: wrap; 
+    gap: 4px;
+  }
+
+  .info-label {
+    width: 100%;
+    flex: 1 1 100%;
+    font-size: 12px;
+  }
+
+  .info-value {
+    width: 100%;
+    flex: 1 1 100%;
+    text-align: left; /* เปลี่ยนมาชิดซ้ายให้อ่านง่าย */
+    font-size: 13px;
+  }
+
+  .error-icon {
+    font-size: 48px; /* ย่อขนาดไอคอน error */
+  }
+
+  .error-details-box {
+    padding: 12px;
+    font-size: 12px;
+    margin-bottom: 18px;
+  }
+}

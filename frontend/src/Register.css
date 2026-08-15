@@ -1,0 +1,307 @@
+.regis-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-image: url("https://www.baltana.com/files/wallpapers-5/Blue-Background-Wallpaper-HD-16273.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+.regis-card {
+  background-color: rgb(245, 248, 255);
+  width: 45%;
+  min-height: 65vh;
+  padding: 35px 40px;
+  border-radius: 13px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+  transition: transform .3s ease,
+              box-shadow .3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  box-sizing: border-box;
+}
+
+
+.regis-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+}
+
+
+.regis-card h2 {
+  font-size: 30px;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+
+.regis-card form {
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+  text-align: left;
+  width: 100%;
+}
+
+
+.form-group input,
+.form-group select {
+  padding: 11px 15px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 15px;
+  background-color: #fff;
+  outline: none;
+  transition: all .3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #007bff;
+
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, .2);
+}
+
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+
+
+.btn-submit {
+  margin-top: 10px;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .25s ease;
+}
+
+
+.btn-submit:hover:not(:disabled) {
+  cursor: pointer;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+  background-color: #2383bb;
+}
+
+
+.btn-submit:disabled {
+  background-color: #a0c4ff;
+  cursor: not-allowed;
+}
+
+
+.error-banner {
+  width: 90%;
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #ef9a9a;
+  box-sizing: border-box;
+}
+
+
+.footer-link {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+  text-align: center;
+}
+
+
+.footer-link a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color .2s ease;
+}
+
+
+.footer-link a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+
+
+@media (max-width: 1024px) {
+
+  .regis-card {
+    width: 60%;
+    min-height: auto;
+    padding: 35px;
+  }
+
+  .regis-card form {
+    width: 90%;
+  }
+}
+
+
+
+@media (max-width: 767px) {
+
+  .regis-container {
+    padding: 15px;
+  }
+
+
+  .regis-card {
+    width: 90%;
+    min-height: auto;
+    padding: 30px 20px;
+    gap: 12px;
+    border-radius: 15px;
+  }
+
+
+  .regis-card h2 {
+    font-size: 27px;
+    margin-bottom: 5px;
+  }
+
+
+  .regis-card form {
+    width: 100%;
+    gap: 13px;
+  }
+
+
+  .form-row {
+    flex-direction: column;
+    gap: 13px;
+  }
+
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+
+  .form-group input,
+  .form-group select {
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+
+
+  .btn-submit {
+    width: 100%;
+    height: 42px;
+    padding: 10px;
+    font-size: 15px;
+  }
+
+
+  .error-banner {
+    width: 100%;
+
+    font-size: 13px;
+  }
+
+  .footer-link {
+    font-size: 13px;
+
+    margin-top: 8px;
+  }
+}
+
+
+
+@media (max-width: 480px) {
+
+  .regis-container {
+    padding: 10px;
+  }
+
+
+  .regis-card {
+    width: 95%;
+
+    padding: 25px 15px;
+
+    gap: 10px;
+  }
+
+
+  .regis-card h2 {
+    font-size: 24px;
+  }
+
+
+  .regis-card form {
+    gap: 12px;
+  }
+
+
+  .form-row {
+    gap: 12px;
+  }
+
+
+  .form-group label {
+    font-size: 12px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .btn-submit {
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .error-banner {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .footer-link {
+    font-size: 12px;
+  }
+}

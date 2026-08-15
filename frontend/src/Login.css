@@ -1,0 +1,288 @@
+
+.button {
+  width: 220px;
+  height: 34px;
+  border-radius: 14px;
+  font-size: medium;
+  margin-top: 1%;
+}
+
+
+.container {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-image: url("https://www.baltana.com/files/wallpapers-5/Blue-Background-Wallpaper-HD-16273.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+.card-1 {
+  background-color: rgb(245, 248, 255);
+  width: 90%;
+  max-width: 550px;
+  min-height: 560px;
+  border-radius: 13px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+  transition: transform .3s ease, box-shadow .3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.card-1:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+}
+
+.card-1 h2 {
+  font-size: 30px;
+  margin-top: 10%;
+  margin-bottom: 0;
+}
+
+.card-1 h1 {
+  font-size: 15px;
+  margin-top: -1%;
+  color: #b8bbbe;
+  font-weight: 100;
+}
+
+
+.card-1 label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+  width: 50%;
+  text-align: left;
+  margin-bottom: -15px;
+}
+
+.card-1 input {
+  width: 50%;
+  padding: 12px;
+  border: 2px solid #e7e7e7;
+  border-radius: 10px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border .2s ease,
+              box-shadow .2s ease;
+}
+
+.card-1 input:focus {
+  border-color: #0e90e0;
+  box-shadow: 0 0 0 3px rgba(14, 144, 224, .1);
+}
+
+
+.card-1 button {
+  width: 50%;
+  height: 39px;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+  color: rgb(255, 255, 255);
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: -26px;
+  background-color: #0e90e0;
+  transition: all .25s ease;
+}
+
+
+
+.card-1 button:hover {
+  cursor: pointer;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+  background-color: #2383bb;
+}
+
+.card-1 h3 {
+  font-size: small;
+  color: #abb3b8;
+  margin-top: -16px;
+  margin-left: 35%;
+  font-weight: 100;
+}
+
+.card-1 h4 {
+  margin-top: -8%;
+  font-size: small;
+  color: #abb3b8;
+  font-weight: 100;
+}
+
+
+.card-1 .regis-btn {
+  width: 50%;
+  height: 39px;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+  color: rgb(255, 255, 255);
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: -26px;
+  background-color: #e7e410;
+  transition: all .25s ease;
+}
+
+
+.card-1 .regis-btn:hover {
+  cursor: pointer;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+  background-color: #d4cf0d;
+}
+
+
+@media (max-width: 1024px) {
+
+  .card-1 {
+    width: 55%;
+    height: auto;
+    min-height: 65vh;
+    padding: 30px 0;
+  }
+
+  .card-1 input,
+  .card-1 button,
+  .card-1 .regis-btn,
+  .card-1 label {
+    width: 65%;
+  }
+
+
+  .card-1 h2 {
+    font-size: 30px;
+  }
+}
+
+
+@media (max-width: 767px) {
+
+  .container {
+    min-height: 100vh;
+    padding: 15px;
+  }
+
+  .card-1 {
+    width: 90%;
+    height: auto;
+    min-height: auto;
+    padding: 30px 0 40px;
+    gap: 18px;
+    border-radius: 15px;
+  }
+
+
+  .card-1 input,
+  .card-1 button,
+  .card-1 .regis-btn,
+  .card-1 label {
+    width: 75%;
+  }
+
+  .card-1 h2 {
+    font-size: 28px;
+    margin-top: 5%;
+    margin-bottom: 0;
+  }
+
+
+  .card-1 h1 {
+    font-size: 14px;
+  }
+
+
+  .card-1 input {
+    padding: 11px;
+    font-size: 14px;
+  }
+
+
+  .card-1 button,
+  .card-1 .regis-btn {
+    height: 42px;
+    margin-top: -10px;
+  }
+
+
+  .card-1 h3 {
+    font-size: 12px;
+    margin-left: 0;
+    align-self: center;
+  }
+
+
+  .card-1 h4 {
+    font-size: 12px;
+    margin-top: -3%;
+  }
+}
+
+
+
+@media (max-width: 480px) {
+
+  .container {
+    padding: 10px;
+  }
+
+
+  .card-1 {
+    width: 95%;
+    padding: 25px 0 35px;
+    gap: 16px;
+  }
+
+
+  .card-1 input,
+  .card-1 button,
+  .card-1 .regis-btn,
+  .card-1 label {
+    width: 82%;
+  }
+
+
+  .card-1 h2 {
+    font-size: 25px;
+  }
+
+
+  .card-1 h1 {
+    font-size: 13px;
+  }
+
+
+  .card-1 input {
+    padding: 10px;
+
+    font-size: 14px;
+  }
+
+
+  .card-1 button,
+  .card-1 .regis-btn {
+    height: 40px;
+
+    font-size: 14px;
+  }
+
+
+  .card-1 h3,
+  .card-1 h4 {
+    font-size: 11px;
+  }
+}

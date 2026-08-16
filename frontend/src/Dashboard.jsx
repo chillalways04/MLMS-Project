@@ -382,39 +382,38 @@ function Dashboard() {
       <footer className="dash-footer-tip">
         💡 <b>Tips:</b> เรียนให้ครบตามแผน และผ่านเกณฑ์ 80% ขึ้นไปในการประเมิน เพื่อพัฒนาความรู้และความปลอดภัยในการทำงาน 👍
       </footer>
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            
-            <div className="success-checkmark">
-              <svg className="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                <circle className="checkmark-circle" cx="26" cy="26" r="23" fill="none" />
-                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
-              </svg>
-            </div>
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="success-checkmark">
+                <svg className="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                  <circle className="checkmark-circle" cx="26" cy="26" r="23" fill="none" />
+                  <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                </svg>
+              </div>
 
-            <h3>ผ่านการทดสอบ</h3>
-            <p>
-              คุณผ่านการทดสอบหลักสูตร <b>การตรวจสอบ 5 ส (5S Inspection)</b> เรียบร้อยแล้ว ด้วยคะแนน <b>80%</b>
-            </p>
+              <h3>ผ่านการทดสอบ</h3>
+              <p>
+                คุณผ่านการทดสอบหลักสูตร <b>การตรวจสอบ 5 ส (5S Inspection)</b> เรียบร้อยแล้ว ด้วยคะแนน <b>80%</b>
+              </p>
 
-            <div className="modal-action-btns">
-              <button 
-                className="btn-view-pdf" 
-                onClick={() => { navigate("/certificate");   
-                  alert("กำลังเปิดไฟล์ PDF ใบรับรอง...");
-                }}
-              >
-                View PDF
-              </button>
-              <button className="btn-close-modal" onClick={() => setShowModal(false)}>
-                ปิดหน้าต่าง
-              </button>
+              <div className="modal-action-btns">
+                <button 
+                  className="btn-view-pdf" 
+                  onClick={() => {navigate("/certificate");
+                    alert("กำลังเปิดไฟล์ PDF ใบรับรอง...");
+                  }}
+                >
+                  View PDF
+                </button>
+                <button className="btn-close-modal" onClick={() => setShowModal(false)}>
+                  ปิดหน้าต่าง
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+            </div>
   );
 }
 

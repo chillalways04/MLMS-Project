@@ -146,6 +146,140 @@
   background-color: #d4cf0d;
 }
 
+.forgot-password-link {
+  font-size: 13px;
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease-in-out;
+  display: inline-block;
+}
+
+.forgot-password-link:hover {
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.forgot-password-link:active {
+  font-weight: 800;
+  color: #0369a1;
+  transform: scale(0.97);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  width: 100%;
+  max-Width: 380px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.modal-title {
+  margin: 0 0 16px;
+  text-align: center;
+  color: #1e293b;
+  font-size: 20px;
+}
+
+.modal-alert {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.modal-alert.error {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.modal-alert.success {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-field {
+  text-align: left;
+}
+
+.modal-field label {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+  display: block;
+}
+
+.modal-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.modal-btn-cancel {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.modal-btn-cancel:hover {
+  background-color: #f1f5f9;
+}
+
+.modal-btn-submit {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #0284c7;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.modal-btn-submit:hover {
+  background-color: #0369a1;
+}
+
+.modal-btn-submit:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
 
 @media (max-width: 1024px) {
 

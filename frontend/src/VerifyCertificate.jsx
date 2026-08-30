@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./VerifyCertificate.css";
 
-
 function VerifyCertificate() {
   const { uuid } = useParams(); 
   const navigate = useNavigate();
@@ -12,7 +11,7 @@ function VerifyCertificate() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/verify-cert/${uuid}`)
+    fetch(`/api/verify-cert/${uuid}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("ไม่พบข้อมูลใบประกาศนียบัตรนี้ในระบบ (อาจเป็นไฟล์จำลองหรือถูกแก้ไข)");
@@ -22,13 +21,14 @@ function VerifyCertificate() {
       .then((result) => {
         if (result.success && result.data) {
           setCertInfo(result.data);
-          setLoading(false);
         } else {
           throw new Error(result.message || "ข้อมูลใบประกาศนียบัตรไม่ถูกต้อง");
         }
       })
       .catch((err) => {
         setError(err.message);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, [uuid]);
@@ -58,7 +58,7 @@ function VerifyCertificate() {
     <div className="verify-container">
       <div className="verify-card">
         <h1 className="verify-title">ตรวจสอบสถานะสำเร็จ</h1>
-        <p className="verify-status-text">ใบประกาศนียบัตรนี้เป็นเอกสารของแท้ในระบบ </p> 
+        <p className="verify-status-text">ใบประกาศนียบัตรนี้เป็นเอกสารของแท้ในระบบ</p> 
         
         <div className="verify-info-table">
           <div className="info-row">
@@ -73,9 +73,9 @@ function VerifyCertificate() {
             <span className="info-label">ตำแหน่ง:</span>
             <span className="info-value">{certInfo.position}</span>
           </div>
-          <div className="info-row">
+                <div className="info-row">
             <span className="info-label">หลักสูตรที่ผ่านการอบรม:</span>
-            <span className="info-value">"ระบบควบคุมคุณภาพการผลิตขั้นสูง (Advanced QA Control)"</span>
+            <span className="info-value">"{certInfo.course_title}"</span>
           </div>
           <div className="info-row">
             <span className="info-label">เลขที่ใบรับรอง (ID):</span>
@@ -93,7 +93,7 @@ function VerifyCertificate() {
         </div>
 
         <button className="back-home-btn" onClick={() => navigate("/dashboard")}>
-          กลับสู่หน้าหลักระบบ
+          กลับสู่หน้าหลัก
         </button>
       </div>
     </div>

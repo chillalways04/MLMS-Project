@@ -144,3 +144,15 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Executables & Cloudflare binaries
+*.exe
+cloudflared
+cloudflared.exe
+
+# Local certificates output (ถ้ามีโฟลเดอร์เก็บ pdf ที่ generate)
+backend/certificates/*.pdf

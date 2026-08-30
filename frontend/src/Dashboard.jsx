@@ -8,7 +8,10 @@ function Dashboard() {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -16,7 +19,18 @@ function Dashboard() {
     if (!user) {
       alert("กรุณาเข้าสู่ระบบก่อนใช้งาน!");
       navigate("/login");
+      return;
     }
+
+    fetch(`http://localhost:5000/api/user-dashboard/${user.id}`)
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success) {
+          setCourses(res.data);
+        }
+      })
+      .catch((err) => console.error("Fetch dashboard error:", err))
+      .finally(() => setLoading(false));
   }, [user, navigate]);
 
   const handleLogout = () => {
@@ -26,9 +40,96 @@ function Dashboard() {
     }
   };
 
-  if (!user) {
+  const handleOpenModal = (course) => {
+    const score = Number(course.score ?? course.exam_score ?? 0);
+    if (score < 80) {
+      alert(`ไม่สามารถดูใบประกาศนียบัตรได้ เนื่องจากคะแนนสอบของคุณ (${score}%) ไม่ถึงเกณฑ์ขั้นต่ำ 80%`);
+      return;
+    }
+    setSelectedCourse(course);
+    setShowModal(true);
+  };
+
+  // ตรวจเช็กเงื่อนไข >= 80% ก่อนเปิดหน้าใบ Certificate
+  const handleViewPDF = () => {
+    if (!selectedCourse) return;
+
+    const score = Number(selectedCourse.score ?? selectedCourse.exam_score ?? 0);
+    if (score < 80) {
+      alert(`ไม่สามารถเปิดดูใบประกาศนียบัตรได้ เนื่องจากคะแนนสอบของคุณ (${score}%) ไม่ถึงเกณฑ์ขั้นต่ำ 80%`);
+      return;
+    }
+
+    const updatedUser = {
+      ...user,
+      cert_uuid: selectedCourse.cert_uuid,
+      verification_code: selectedCourse.verification_code,
+      course_title: selectedCourse.course_title,
+      issued_at: selectedCourse.issued_at
+    };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    navigate("/certificate");
+  };
+
+  if (!user || loading) {
     return <div className="loading">กำลังโหลดข้อมูลระบบ...</div>;
   }
+
+  // คำนวณสถานะผ่านเกณฑ์โดยอิงคะแนน >= 80%
+  const passedList = courses.filter((c) => Number(c.score) >= 80 || c.is_passed);
+  const failedList = courses.filter((c) => Number(c.score) < 80 && !c.is_passed);
+
+  const totalCourses = courses.length;
+  const passedCourses = passedList.length;
+  const overallProgress = totalCourses > 0 ? Math.round((passedCourses / totalCourses) * 100) : 0;
+
+  const categoryConfigs = [
+    { 
+      title: 'Mandatory Training', 
+      keywords: ['gmp', 'safety', 'ความปลอดภัย', 'กฎระเบียบ', 'สิ่งแวดล้อม'],
+      defaultTotal: 2
+    },
+    { 
+      title: 'Technical Skill', 
+      keywords: ['machine', 'setup', 'เครื่องจักร', 'pm', 'ซ่อมบำรุง', 'เทคนิค'],
+      defaultTotal: 2
+    },
+    { 
+      title: 'Soft Skill', 
+      keywords: ['kaizen', '5s', 'สื่อสาร', 'หัวหน้างาน', 'จิตวิทยา'],
+      defaultTotal: 1
+    },
+    { 
+      title: 'Work Instruction', 
+      keywords: ['wi', 'sop', 'ประกอบ', 'บรรจุ', 'ขั้นตอน'],
+      defaultTotal: 2
+    }
+  ];
+
+  const categoryPlans = categoryConfigs.map((cfg) => {
+    const matchedCourses = courses.filter((c) => {
+      const title = (c.course_title || '').toLowerCase();
+      return cfg.keywords.some((kw) => title.includes(kw));
+    });
+
+    const passedCount = matchedCourses.filter(
+      (c) => Number(c.score) >= 80 || c.is_passed || String(c.status).toLowerCase() === 'completed' || String(c.status).toUpperCase() === 'PASS'
+    ).length;
+
+    const totalCount = matchedCourses.length > 0 ? matchedCourses.length : cfg.defaultTotal;
+    const percent = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
+
+    return {
+      title: cfg.title,
+      passed: passedCount,
+      total: totalCount,
+      percent: percent
+    };
+  });
+
+  const uniqueCourses = Array.from(
+    new Map((courses || []).map(item => [item.course_id || item.course_title, item])).values()
+  );
 
   return (
     <div className="dashboard-wrapper">
@@ -47,10 +148,18 @@ function Dashboard() {
             🔔<span className="badge-count">3</span>
           </div>
           <div className="help-icon">❓</div>
-          <div className="user-avatar-tag" onClick={handleLogout} title="คลิกเพื่อออกจากระบบ">
-            <div className="mini-avatar">👤</div>
-            <span>{user.first_name || "พนักงานปกติ"}</span>
+          <div className="user-avatar-tag">
+            <span className="mini-avatar">👤</span>
+            <span>{user?.first_name || "สมชาย"}</span>
           </div>
+          <button className="btn-logout-icon" title="ออกจากระบบ" onClick={handleLogout}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>ออกจากระบบ</span>
+          </button>
         </div>
       </header>
 
@@ -59,117 +168,123 @@ function Dashboard() {
           <span className="box-icon icon-blue">📖</span>
           <div>
             <div className="stat-label">ทั้งหมด</div>
-            <div className="stat-num">32 <span className="stat-unit">บทเรียน</span></div>
+            <div className="stat-num">
+              {uniqueCourses.length} <span className="stat-unit">บทเรียน</span>
+            </div>
             <small className="stat-sub">ที่ต้องเรียนทั้งหมด</small>
           </div>
         </div>
+
         <div className="stat-box">
           <span className="box-icon icon-green">✅</span>
           <div>
-            <div className="stat-label">เรียนจบแล้ว</div>
+            <div className="stat-label">เรียนจบแล้ว (≥ 80%)</div>
             <div className="stat-num">
-              18 <span className="stat-unit">บทเรียน</span> <span className="tag green">56%</span>
+              {passedList.length} <span className="stat-unit">บทเรียน</span>{" "}
+              <span className="tag green">
+                {uniqueCourses.length > 0
+                  ? Math.round((passedList.length / uniqueCourses.length) * 100)
+                  : 0}
+                %
+              </span>
             </div>
           </div>
         </div>
+
         <div className="stat-box">
           <span className="box-icon icon-orange">🕒</span>
           <div>
             <div className="stat-label">กำลังเรียน</div>
             <div className="stat-num">
-              6 <span className="stat-unit">บทเรียน</span> <span className="tag orange">19%</span>
+              0 <span className="stat-unit">บทเรียน</span>{" "}
+              <span className="tag orange">0%</span>
             </div>
           </div>
         </div>
+
         <div className="stat-box">
           <span className="box-icon icon-purple">▶️</span>
           <div>
             <div className="stat-label">ยังไม่เริ่ม</div>
             <div className="stat-num">
-              6 <span className="stat-unit">บทเรียน</span> <span className="tag purple">19%</span>
+              0 <span className="stat-unit">บทเรียน</span>{" "}
+              <span className="tag purple">0%</span>
             </div>
           </div>
         </div>
+
         <div className="stat-box">
           <span className="box-icon icon-red">❌</span>
           <div>
-            <div className="stat-label">ไม่ผ่าน/ต้องซ่อม</div>
+            <div className="stat-label">ไม่ผ่าน (&lt; 80%)</div>
             <div className="stat-num">
-              2 <span className="stat-unit">บทเรียน</span> <span className="tag red">6%</span>
+              {failedList.length} <span className="stat-unit">บทเรียน</span>{" "}
+              <span className="tag red">
+                {uniqueCourses.length > 0
+                  ? Math.round((failedList.length / uniqueCourses.length) * 100)
+                  : 0}
+                %
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-     <section className="grid-3-col">
+      <section className="grid-3-col">
         <div className="card">
           <h4>ความก้าวหน้าการเรียนของฉัน</h4>
           <div className="circle-progress-wrapper">
-            <div className="circular-chart">
+            <div 
+              className="circular-chart" 
+              style={{ background: `conic-gradient(var(--success) 0% ${overallProgress}%, #e2e8f0 ${overallProgress}% 100%)` }}
+            >
               <div className="circle-inner">
-                <strong>56%</strong>
+                <strong>{overallProgress}%</strong>
                 <span>ความคืบหน้า</span>
               </div>
             </div>
+
             <div className="progress-legend">
-              <p>
-                <span><span className="dot dot-green"></span> ความปลอดภัย (Safety)</span>
-                <b>100%</b>
-                <span className="text-success">ผ่าน</span>
-              </p>
-              <p>
-                <span><span className="dot dot-yellow"></span> คุณภาพ (Quality)</span>
-                <b>75%</b>
-                <span className="text-warning">กำลังเรียน</span>
-              </p>
-              <p>
-                <span><span className="dot dot-orange"></span> การปฏิบัติงานเครื่องจักร</span>
-                <b>40%</b>
-                <span className="text-warning">กำลังเรียน</span>
-              </p>
-              <p>
-                <span><span className="dot dot-gray"></span> การบำรุงรักษาเบื้องต้น (PM)</span>
-                <b>0%</b>
-                <span className="text-muted">ยังไม่เริ่ม</span>
-              </p>
+              {uniqueCourses.slice(0, 4).map((c, idx) => {
+                const score = Number(c.score || 0);
+                const isPass = score >= 80 || c.is_passed;
+                return (
+                  <p key={c.exam_id || c.course_id || idx}>
+                    <span>
+                      <i className={`dot ${isPass ? 'dot-green' : score > 0 ? 'dot-yellow' : 'dot-gray'}`}></i>
+                      {c.course_title}
+                    </span>
+                    <b>{score}%</b>
+                    <span className={isPass ? 'text-success' : score > 0 ? 'text-warning' : 'text-muted'}>
+                      {isPass ? 'ผ่าน' : score > 0 ? 'กำลังเรียน' : 'ยังไม่เริ่ม'}
+                    </span>
+                  </p>
+                );
+              })}
             </div>
           </div>
-          <button className="btn-outline w-100 mt-auto" >
-            ดูรายละเอียดทั้งหมด
-          </button>
+          <button className="btn-outline w-100 mt-auto">ดูรายละเอียดทั้งหมด</button>
         </div>
 
         <div className="card">
           <h4>แผนการเรียนของฉัน (ตามตำแหน่งงาน)</h4>
           <div className="plan-list">
-            <div className="plan-item">
-              <span>📘 Mandatory Training</span>
-              <div className="progress-bar-bg">
-                <div className="progress-fill green" style={{ width: "90%" }}></div>
-              </div>
-              <small>90% (9/10 บทเรียน)</small>
-            </div>
-            <div className="plan-item">
-              <span>🛠️ Technical Skill</span>
-              <div className="progress-bar-bg">
-                <div className="progress-fill teal" style={{ width: "78%" }}></div>
-              </div>
-              <small>78% (7/9 บทเรียน)</small>
-            </div>
-            <div className="plan-item">
-              <span>💡 Soft Skill</span>
-              <div className="progress-bar-bg">
-                <div className="progress-fill orange" style={{ width: "60%" }}></div>
-              </div>
-              <small>60% (6/10 บทเรียน)</small>
-            </div>
-            <div className="plan-item">
-              <span>⚙️ Work Instruction</span>
-              <div className="progress-bar-bg">
-                <div className="progress-fill yellow" style={{ width: "45%" }}></div>
-              </div>
-              <small>45% (5/11 บทเรียน)</small>
-            </div>
+            {categoryPlans.length > 0 ? (
+              categoryPlans.slice(0, 4).map((plan, idx) => (
+                <div className="plan-item" key={idx}>
+                  <span title={plan.title}>{plan.title}</span>
+                  <div className="progress-bar-bg">
+                    <div 
+                      className={`progress-fill ${plan.percent >= 80 ? 'green' : plan.percent >= 50 ? 'teal' : 'orange'}`} 
+                      style={{ width: `${plan.percent}%` }}
+                    ></div>
+                  </div>
+                  <small>{plan.percent}% ({plan.passed}/{plan.total} บทเรียน)</small>
+                </div>
+              ))
+            ) : (
+              <div className="text-muted" style={{ margin: 'auto', padding: '20px 0' }}>ไม่มีรายการแผนการเรียน</div>
+            )}
           </div>
           <button className="btn-outline w-100 mt-auto">ดูแผนการเรียนทั้งหมด</button>
         </div>
@@ -203,63 +318,53 @@ function Dashboard() {
 
       <section className="grid-3-col">
         <div className="card">
-          <h4>หลักสูตรที่ต้องเรียนต่อ <span className="counter-pill">6</span></h4>
-          <div className="course-action-item">
-            <div>
-              <div className="course-title">การตั้งค่าเครื่องจักรเบื้องต้น</div>
-              <small>Machine Setup Basics</small>
-            </div>
-            <div className="course-action-right">
-              <span>60%</span>
-              <button className="btn-primary-sm">ดูบทเรียน</button>
-            </div>
-          </div>
-          <div className="course-action-item">
-            <div>
-              <div className="course-title">การควบคุมคุณภาพในกระบวนการ</div>
-              <small>In-process Quality Control</small>
-            </div>
-            <div className="course-action-right">
-              <span>40%</span>
-              <button className="btn-primary-sm">ดูบทเรียน</button>
-            </div>
-          </div>
-          <div className="course-action-item">
-            <div>
-              <div className="course-title">การตรวจสอบ 5 ส</div>
-              <small>5S Inspection</small>
-            </div>
-            <div className="course-action-right">
-              <span className="text-success font-bold">80%</span>
-              <button className="btn-success-sm" onClick={() => setShowModal(true)}>
-                ผ่านการทดสอบ
-              </button>
-            </div>
+          <h4>หลักสูตรที่ต้องเรียนต่อ <span className="counter-pill">{uniqueCourses.length}</span></h4>
+          
+          <div className="course-scroll-container">
+            {uniqueCourses.map((item) => {
+              const score = Number(item.score || 0);
+              const isPass = score >= 80 || item.is_passed;
+
+              return (
+                <div className="course-action-item" key={item.exam_id || item.course_id}>
+                  <div>
+                    <div className="course-title">{item.course_title}</div>
+                    <small>{isPass ? "ผ่านเกณฑ์ 80% แล้ว" : "คะแนนไม่ถึงเกณฑ์ (ต้องซ่อม)"}</small>
+                  </div>
+                  <div className="course-action-right">
+                    <span className={isPass ? "text-success font-bold" : "text-warning"}>{score}%</span>
+                    {isPass ? (
+                      <button className="btn-success-sm" onClick={() => handleOpenModal(item)}>
+                         ผ่านการทดสอบ
+                      </button>
+                    ) : (
+                      <button className="btn-primary-sm">ดูบทเรียน</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         <div className="card">
-          <h4>หลักสูตรที่ไม่ผ่าน / ต้องซ่อม <span className="counter-pill red">2</span></h4>
-          <div className="course-action-item border-red">
-            <div>
-              <div className="course-title">ความปลอดภัยในการทำงาน</div>
-              <small>Safety at Work</small>
-            </div>
-            <div className="course-action-right">
-              <span className="text-danger">คะแนน 65%</span>
-              <button className="btn-outline-danger-sm">ซ่อม</button>
-            </div>
-          </div>
-          <div className="course-action-item border-red">
-            <div>
-              <div className="course-title">ความรู้พื้นฐานคุณภาพ</div>
-              <small>Quality Basic</small>
-            </div>
-            <div className="course-action-right">
-              <span className="text-danger">คะแนน 70%</span>
-              <button className="btn-outline-danger-sm">ซ่อม</button>
-            </div>
-          </div>
+          <h4>หลักสูตรที่ไม่ผ่าน / ต้องซ่อม (&lt; 80%) <span className="counter-pill red">{failedList.length}</span></h4>
+          {failedList.length === 0 ? (
+            <p style={{ color: "#166534", fontSize: "14px", padding: "10px 0" }}>ไม่มีวิชาที่ต้องซ่อม 🎉</p>
+          ) : (
+            failedList.map((item) => (
+              <div className="course-action-item border-red" key={item.exam_id || item.course_id}>
+                <div>
+                  <div className="course-title">{item.course_title}</div>
+                  <small>วันที่สอบ: {item.tested_at || "-"}</small>
+                </div>
+                <div className="course-action-right">
+                  <span className="text-danger">คะแนน {item.score}%</span>
+                  <button className="btn-outline-danger-sm">ซ่อม</button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="card">
@@ -267,25 +372,29 @@ function Dashboard() {
             <h4>ผลการประเมินล่าสุด</h4>
             <a href="#all" className="link-text">ดูทั้งหมด</a>
           </div>
-          <div className="assessment-item">
-            <div className="assessment-left">
-              <span className="status-badge-circle green">✅</span>
-              <div className="assessment-detail">
-                <div className="course-title">การตรวจสอบ 5 ส</div>
-                <small className="eval-date-sub">วันที่สอบ: 10/05/2024</small>
-              </div>
-            </div>
-            <div className="score-val text-success">85%</div>
-          </div>
-          <div className="assessment-item">
-            <div className="assessment-left">
-              <span className="status-badge-circle red">❌</span>
-              <div className="assessment-detail">
-                <div className="course-title">ความปลอดภัยในการทำงาน</div>
-                <small className="eval-date-sub">วันที่สอบ: 10/05/2024</small>
-              </div>
-            </div>
-            <div className="score-val text-danger">ไม่ผ่าน</div>
+
+          <div className="assessment-scroll-container">
+            {uniqueCourses.map((item) => {
+              const score = Number(item.score || 0);
+              const isPass = score >= 80 || item.is_passed;
+
+              return (
+                <div className="assessment-item" key={item.exam_id || item.course_id}>
+                  <div className="assessment-left">
+                    <span className={`status-badge-circle ${isPass ? "green" : "red"}`}>
+                      {isPass ? "✅" : "❌"}
+                    </span>
+                    <div className="assessment-detail">
+                      <div className="course-title">{item.course_title}</div>
+                      <small className="eval-date-sub">วันที่สอบ: {item.tested_at || "-"}</small>
+                    </div>
+                  </div>
+                  <div className={`score-val ${isPass ? "text-success" : "text-danger"}`}>
+                    {isPass ? `${score}%` : "ไม่ผ่าน"}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -315,39 +424,42 @@ function Dashboard() {
             <h4>ประวัติการเรียนล่าสุด</h4>
             <a href="#all" className="link-text">ดูทั้งหมด</a>
           </div>
-          <div className="history-row">
-            <span>✅ GMP Refresher Training</span>
-            <span className="status-tag green">เรียนจบ</span>
-            <b>85%</b>
-          </div>
-          <div className="history-row">
-            <span>✅ QC Basic</span>
-            <span className="status-tag green">เรียนจบ</span>
-            <b>80%</b>
-          </div>
-          <div className="history-row">
-            <span>🔄 Machine Setup</span>
-            <span className="status-tag yellow">กำลังเรียน</span>
-            <b>60%</b>
+
+          <div className="history-scroll-container">
+            {uniqueCourses.map((item, idx) => {
+              const score = Number(item.score || 0);
+              const isComplete = score >= 80 || item.is_passed;
+              return (
+                <div className="history-row" key={item.exam_id || item.course_id || idx}>
+                  <span>
+                    {isComplete ? '✅' : '🔄'} {item.course_title}
+                  </span>
+                  <span className={`status-tag ${isComplete ? 'green' : 'yellow'}`}>
+                    {isComplete ? 'ผ่านเกณฑ์' : 'กำลังเรียน'}
+                  </span>
+                  <b>{score}%</b>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-       <div className="card">
-              <h4>ติดต่อ / บุคคลที่เกี่ยวข้อง</h4>
-              <div className="contact-list">
-                <div className="contact-row">
-                  <div className="contact-left">
-                    <span className="contact-avatar">👨‍💼</span>
-                    <div className="contact-info">
-                      <span className="contact-role">หัวหน้างาน</span>
-                      <span className="contact-name">คุณสมชาย ใจดี</span>
-                    </div>
-                  </div>
-                  <div className="contact-right">
-                    <span className="contact-tel">02-123-4567</span>
-                    <span className="contact-chat-icon">💬</span>
-                  </div>
+        <div className="card">
+          <h4>ติดต่อ / บุคคลที่เกี่ยวข้อง</h4>
+          <div className="contact-list">
+            <div className="contact-row">
+              <div className="contact-left">
+                <span className="contact-avatar">👨‍💼</span>
+                <div className="contact-info">
+                  <span className="contact-role">หัวหน้างาน</span>
+                  <span className="contact-name">คุณสมชาย ใจดี</span>
                 </div>
+              </div>
+              <div className="contact-right">
+                <span className="contact-tel">02-123-4567</span>
+                <span className="contact-chat-icon">💬</span>
+              </div>
+            </div>
 
             <div className="contact-row">
               <div className="contact-left">
@@ -379,41 +491,37 @@ function Dashboard() {
           </div>
         </div>
       </section>
+
       <footer className="dash-footer-tip">
-        💡 <b>Tips:</b> เรียนให้ครบตามแผน และผ่านเกณฑ์ 80% ขึ้นไปในการประเมิน เพื่อพัฒนาความรู้และความปลอดภัยในการทำงาน 👍
+        💡 <b>Tips:</b> เรียนให้ครบตามแผน และผ่านเกณฑ์ 80% ขึ้นไปในการประเมิน เพื่อรับใบประกาศนียบัตร (Certificate) 👍
       </footer>
-        {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-              <div className="success-checkmark">
-                <svg className="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                  <circle className="checkmark-circle" cx="26" cy="26" r="23" fill="none" />
-                  <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
-                </svg>
-              </div>
 
-              <h3>ผ่านการทดสอบ</h3>
-              <p>
-                คุณผ่านการทดสอบหลักสูตร <b>การตรวจสอบ 5 ส (5S Inspection)</b> เรียบร้อยแล้ว ด้วยคะแนน <b>80%</b>
-              </p>
+      {showModal && selectedCourse && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="success-checkmark">
+              <svg className="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle className="checkmark-circle" cx="26" cy="26" r="23" fill="none" />
+                <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+              </svg>
+            </div>
+            <h3>ผ่านการทดสอบ (≥ 80%)</h3>
+            <p>
+              คุณผ่านการทดสอบหลักสูตร <b>{selectedCourse.course_title}</b> เรียบร้อยแล้ว ด้วยคะแนน <b>{selectedCourse.score}%</b>
+            </p>
 
-              <div className="modal-action-btns">
-                <button 
-                  className="btn-view-pdf" 
-                  onClick={() => {navigate("/certificate");
-                    alert("กำลังเปิดไฟล์ PDF ใบรับรอง...");
-                  }}
-                >
-                  View PDF
-                </button>
-                <button className="btn-close-modal" onClick={() => setShowModal(false)}>
-                  ปิดหน้าต่าง
-                </button>
-              </div>
+            <div className="modal-action-btns">
+              <button className="btn-view-pdf" onClick={handleViewPDF}>
+                View PDF (ใบประกาศ)
+              </button>
+              <button className="btn-close-modal" onClick={() => setShowModal(false)}>
+                ปิดหน้าต่าง
+              </button>
             </div>
           </div>
-        )}
-            </div>
+        </div>
+      )}
+    </div>
   );
 }
 

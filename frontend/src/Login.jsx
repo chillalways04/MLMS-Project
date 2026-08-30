@@ -9,6 +9,7 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault(); 
 
@@ -33,24 +34,26 @@ function Login() {
         throw new Error(data.message || "เข้าสู่ระบบล้มเหลว");
       }
 
-
       alert("เข้าสู่ระบบสำเร็จ!");
       
       localStorage.setItem("user", JSON.stringify(data.user));
       const empCode = data.user.employee_code.toUpperCase();
       const prefix = empCode.substring(0, 2);
-      if (prefix === "LD" || prefix === "SV") {
+      if (prefix === "SV") {
         navigate("/");
       } else {
         navigate("/dashboard"); 
       }
       
-      } catch (error) {
-        setError(error.message || "เข้าสู่ระบบล้มเหลว");
-      } finally {
-        setLoading(false);
-      }
-  
+    } catch (err) {
+      setError(err.message || "เข้าสู่ระบบล้มเหลว");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = () => {
+    alert("หากลืมรหัสผ่าน กรุณาติดต่อ Supervisor หรือหัวหน้างานประจำ Line ของคุณเพื่อทำการรีเซ็ตรหัสผ่าน");
   };
 
   return (
@@ -58,7 +61,9 @@ function Login() {
       <form onSubmit={handleSubmit} className="card-1">
         <h2>เข้าสู่ระบบ</h2>
 
-        {error && <p style={{ color: "red", fontSize: "14px", backgroundColor: "#fff2f0", padding: "8px", borderRadius: "4px", width: "100%", textAlign: "center", boxSizing: "border-box" }}>{error}</p>}
+        {error && <p className="error-message">{error}</p>}
+        
+        
         <label>Username</label>
         <input
           type="text"
@@ -67,6 +72,7 @@ function Login() {
           onChange={(e) => setEmployeeCode(e.target.value)}
           required
         />
+        
         <label>Password</label>
         <input
           type="password"
@@ -76,7 +82,12 @@ function Login() {
           required
         />
 
-        <h3>ลืมรหัสผ่าน?</h3>
+        <h3 
+          className="forgot-password-link"
+          onClick={handleForgotPassword}
+        >
+          ลืมรหัสผ่าน?
+        </h3>
 
         <button type="submit" disabled={loading}>
           {loading ? "กำลังตรวจสอบ..." : "เข้าสู่ระบบ"}

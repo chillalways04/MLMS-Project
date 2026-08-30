@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Login from "./Login";
+import Login from "./login";
 import OrgFilter from "./OrgFilter";
 import Dashboard from "./Dashboard";
 import Certificate from "./Certificate";
 import VerifyCertificate from "./VerifyCertificate";
-import Register from "./register";
+import Register from "./Register";
 
 function App() {
   return (

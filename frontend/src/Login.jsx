@@ -5,6 +5,7 @@ import { useState } from "react";
 function Login() {
   const [employeeCode, setEmployeeCode] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -63,7 +64,6 @@ function Login() {
 
         {error && <p className="error-message">{error}</p>}
         
-        
         <label>Username</label>
         <input
           type="text"
@@ -74,13 +74,24 @@ function Login() {
         />
         
         <label>Password</label>
-        <input
-          type="password"
-          placeholder="รหัสผ่าน (Password)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="password-input-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="รหัสผ่าน (Password)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="toggle-password-btn"
+              onClick={() => setShowPassword(!showPassword)}
+              title={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+              aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+            >
+              <i className={`fa-solid ${showPassword ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+            </button>
+          </div>
 
         <h3 
           className="forgot-password-link"

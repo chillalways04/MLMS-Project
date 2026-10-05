@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
-import './OrgFilter.css';
+import './OrgFilter.css'; // หรือ './OrgFilter.css' ตามที่คุณตั้งชื่อไฟล์
+
+const API_BASE = "";
 
 function OrgFilter() {
   const navigate = useNavigate();
@@ -29,89 +31,143 @@ function OrgFilter() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 1. ตรวจสอบสิทธิ์ & ดึงเฉพาะ Line ที่ Supervisor คนนี้มีสิทธิ์เข้าถึง
+  // Helper สำหรับดึง Header พร้อม Bearer Token
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  }, []);
+
+  // 1. ตรวจสอบสิทธิ์ & ดึงเฉพาะ Line ของ Supervisor
   useEffect(() => {
-    if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนใช้งาน!");
-      navigate("/login");
+    const token = localStorage.getItem("token");
+
+    if (!user?.id || !token) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
       return;
     }
 
-    if (user.role_id !== 3 && !user.position?.toLowerCase().includes('supervisor')) {
-      alert("คุณไม่มีสิทธิ์เข้าถึงส่วนหัวหน้างาน!");
-      navigate("/dashboard");
+    if (Number(user.role_id) !== 3) {
+      navigate("/dashboard", { replace: true });
       return;
     }
 
-    fetch(`http://localhost:5000/api/lines?user_id=${user.id}`)
+    fetch(`${API_BASE}/api/lines?user_id=${user.id}`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => res.json())
       .then((data) => {
-        setLines(data);
-        if (data.length > 0) {
-          setSelectedLine(String(data[0].id));
+        if (Array.isArray(data)) {
+          setLines(data);
+          if (data.length > 0) {
+            setSelectedLine(String(data[0].id));
+          }
         }
       })
       .catch((err) => console.error("Error lines:", err));
-  }, [user, navigate]);
+  }, [user, navigate, getAuthHeaders]);
 
   // 2. ดึง Section เมื่อเลือก Line
   useEffect(() => {
     if (!selectedLine) return;
-    fetch(`http://localhost:5000/api/sections?line_id=${selectedLine}`)
+
+    fetch(`${API_BASE}/api/sections?line_id=${selectedLine}`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => res.json())
-      .then((data) => setSections(data))
+      .then((data) => setSections(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Error sections:", err));
-  }, [selectedLine]);
+  }, [selectedLine, getAuthHeaders]);
 
   // 3. ดึง Team เมื่อเลือก Section
   useEffect(() => {
     if (!selectedSection) return;
-    fetch(`http://localhost:5000/api/teams?section_id=${selectedSection}`)
+
+    fetch(`${API_BASE}/api/teams?section_id=${selectedSection}`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => res.json())
-      .then((data) => setTeams(data))
+      .then((data) => setTeams(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Error teams:", err));
-  }, [selectedSection]);
+  }, [selectedSection, getAuthHeaders]);
 
-  // 4. ดึงข้อมูล Dashboard ภาพรวม
+  // 4. ดึงข้อมูล Dashboard ภาพรวม พร้อมระบบตัดการทำงาน (AbortController)
   useEffect(() => {
-    if (!user) return;
-    let isMounted = true;
-    let url = 'http://localhost:5000/api/supervisor/dashboard-summary';
-    const params = new URLSearchParams();
+    const token = localStorage.getItem("token");
+    if (!user?.id || !token || Number(user.role_id) !== 3) return;
 
-    params.append('supervisor_id', user.id);
+    const controller = new AbortController();
 
-    if (selectedTeam) params.append('team_id', selectedTeam);
-    else if (selectedSection) params.append('section_id', selectedSection);
-    else if (selectedLine) params.append('line_id', selectedLine);
+    const fetchSummary = async () => {
+      setLoadingData(true);
 
-    url += `?${params.toString()}`;
+      try {
+        const params = new URLSearchParams();
+        if (selectedTeam) {
+          params.set("team_id", selectedTeam);
+        } else if (selectedSection) {
+          params.set("section_id", selectedSection);
+        }
 
-    fetch(url)
-      .then((res) => res.json())
-      .then((res) => {
-        if (isMounted && res.success) {
-          setRawMembers(res.members || []);
-          setTopFailedCourses(res.topFailed || []);
-          setTeamCompare(res.teamCompare || []);
-          setActivities(res.activities || []);
+        const url = `${API_BASE}/api/supervisor/dashboard-summary${params.toString() ? `?${params.toString()}` : ''}`;
+
+        const response = await fetch(url, {
+          headers: getAuthHeaders(),
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        if (response.status === 403) {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "โหลดข้อมูลหัวหน้างานไม่สำเร็จ");
+        }
+
+        if (!controller.signal.aborted) {
+          setRawMembers(result.members || []);
+          setTopFailedCourses(result.topFailed || []);
+          setTeamCompare(result.teamCompare || []);
+          setActivities(result.activities || []);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error("Fetch summary error:", err);
+          setRawMembers([]);
+          setTopFailedCourses([]);
+          setTeamCompare([]);
+          setActivities([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
           setLoadingData(false);
         }
-      })
-      .catch((err) => {
-        console.error("Fetch summary error:", err);
-        if (isMounted) setLoadingData(false);
-      });
+      }
+    };
+
+    fetchSummary();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [selectedLine, selectedSection, selectedTeam, user]);
+  }, [selectedLine, selectedSection, selectedTeam, user, navigate, getAuthHeaders]);
 
   const handleLineChange = (e) => {
-    const val = e.target.value;
-    setLoadingData(true);
-    setSelectedLine(val);
+    setSelectedLine(e.target.value);
     setSelectedSection('');
     setSelectedTeam('');
     setSections([]);
@@ -119,50 +175,62 @@ function OrgFilter() {
   };
 
   const handleSectionChange = (e) => {
-    const val = e.target.value;
-    setLoadingData(true);
-    setSelectedSection(val);
+    setSelectedSection(e.target.value);
     setSelectedTeam('');
     setTeams([]);
   };
 
   const handleTeamChange = (e) => {
-    const val = e.target.value;
-    setLoadingData(true);
-    setSelectedTeam(val);
+    setSelectedTeam(e.target.value);
   };
-  
+
   const handleLogout = () => {
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
       localStorage.removeItem("user");
-      navigate("/login");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
     }
   };
 
-  // ฟังก์ชัน Supervisor รีเซ็ตรหัสผ่านของลูกทีม
+  // รีเซ็ตรหัสผ่านพนักงาน
   const handleResetEmployeePassword = async (targetUserId, employeeName) => {
+    const token = localStorage.getItem("token");
+
+    if (!user?.id || !token) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
+      return;
+    }
+
     const confirmReset = window.confirm(`คุณต้องการรีเซ็ตรหัสผ่านของ "${employeeName}" ใช่หรือไม่?`);
     if (!confirmReset) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/supervisor/reset-user-password", {
+      const res = await fetch(`${API_BASE}/api/supervisor/reset-user-password`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
-          supervisor_id: user.id,
-          target_user_id: targetUserId
-        })
+          target_user_id: targetUserId,
+        }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        alert(data.message);
-      } else {
-        alert(data.message || "ไม่สามารถรีเซ็ตรหัสผ่านได้");
+      if (res.status === 401) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/login", { replace: true });
+        return;
       }
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "ไม่สามารถรีเซ็ตรหัสผ่านได้");
+      }
+
+      alert(data.message || "รีเซ็ตรหัสผ่านสำเร็จ");
     } catch (err) {
       console.error("Reset employee password error:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      alert(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
     }
   };
 

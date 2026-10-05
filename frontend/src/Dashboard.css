@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
-
+/* ==========================================================================
+   1. GLOBAL VARIABLES & BASE STYLES
+   ========================================================================== */
 :root {
   --font-base: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --bg-main: #f0f4f9;
@@ -36,35 +38,47 @@
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
+  max-width: 100vw;
   min-height: 100vh;
+  overflow-x: hidden;
   background-color: var(--bg-main);
+  font-family: var(--font-base);
 }
 
+/* ==========================================================================
+   2. DESKTOP / DEFAULT LAYOUT
+   ========================================================================== */
 .dashboard-wrapper {
   background-color: var(--bg-main);
-  padding: clamp(16px, 2.5vw, 32px);
-  font-family: var(--font-base);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 24px 32px;
   color: var(--text-main);
   min-height: 100vh;
-  width: 100%;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 2vw, 24px);
+  gap: 24px;
+  box-sizing: border-box;
+  text-align: left; /* บังคับค่าเริ่มต้นให้ชิดซ้ายทั้งหน้า */
 }
 
-
+/* Header */
 .dash-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: 16px;
   width: 100%;
+  text-align: left;
 }
 
 .welcome-text { 
@@ -73,23 +87,27 @@ html, body {
   font-weight: 500; 
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: block;
+  text-align: left;
 }
 
 .user-name-highlight {
   display: inline-block;
   background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
   margin: 4px 0 2px 0;
-  font-size: clamp(18px, 2vw, 22px);
+  font-size: 24px;
   font-weight: 700;
   padding: 0 8px;
   border-radius: var(--radius-sm);
   color: #854d0e;
+  text-align: left;
 }
 
 .user-subtitle { 
-  font-size: 13px; 
+  font-size: 14px; 
   color: var(--text-muted); 
   margin: 0; 
+  text-align: left;
 }
 
 .header-actions { 
@@ -162,21 +180,22 @@ html, body {
   justify-content: center;
   font-size: 14px;
 }
+
 .btn-logout-icon {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-card, #ffffff);
+  background: var(--bg-card);
   color: #ef4444;
   border: 1px solid #fee2e2;
   padding: 8px 14px;
-  border-radius: var(--radius-full, 9999px);
+  border-radius: var(--radius-full);
   cursor: pointer;
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
 }
 
 .btn-logout-icon:hover {
@@ -184,16 +203,17 @@ html, body {
   border-color: #fca5a5;
   color: #dc2626;
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.07));
+  box-shadow: var(--shadow-md);
 }
 
 .btn-logout-icon svg {
   stroke: currentColor;
 }
 
+/* Stats Row */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   width: 100%;
 }
@@ -208,7 +228,7 @@ html, body {
   box-shadow: var(--shadow-sm);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: var(--transition);
-  box-sizing: border-box;
+  text-align: left;
 }
 
 .stat-box:hover {
@@ -233,35 +253,38 @@ html, body {
 .icon-red { background: var(--danger-light); color: var(--danger); }
 
 .stat-label { 
-  font-size: 15px; 
+  font-size: 14px; 
   color: var(--text-muted); 
   font-weight: 500; 
+  text-align: left;
 }
 
 .stat-num { 
-  font-size: clamp(20px, 1.8vw, 26px); 
+  font-size: 22px; 
   font-weight: 700; 
   margin: 4px 0 2px 0; 
   display: flex;
   align-items: baseline;
   gap: 6px;
   flex-wrap: wrap;
+  text-align: left;
 }
 
 .stat-unit { 
-  font-size: 15px; 
+  font-size: 14px; 
   font-weight: 400; 
   color: var(--text-muted); 
 }
 
 .stat-sub { 
-  font-size: 13px; 
+  font-size: 12px; 
   color: var(--text-subtle); 
   display: block; 
+  text-align: left;
 }
 
 .tag { 
-  font-size: 13px; 
+  font-size: 12px; 
   padding: 2px 8px; 
   border-radius: var(--radius-full); 
   font-weight: 600; 
@@ -272,7 +295,7 @@ html, body {
 .tag.purple { background: var(--purple-light); color: #6d28d9; }
 .tag.red { background: var(--danger-light); color: #b91c1c; }
 
-
+/* Grid 3 Columns บน Desktop */
 .grid-3-col {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -290,8 +313,8 @@ html, body {
   box-shadow: var(--shadow-sm);
   border: 1px solid rgba(226, 232, 240, 0.8);
   transition: var(--transition);
-  box-sizing: border-box;
   height: 100%;
+  text-align: left;
 }
 
 .card:hover {
@@ -302,16 +325,18 @@ html, body {
   margin: 0; 
   font-size: 15px; 
   font-weight: 600; 
-  color: var(--text-main);
+  color: var(--text-main); 
   display: flex;
   align-items: center;
   gap: 8px;
+  text-align: left;
 }
 
 .card-header-flex { 
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
+  width: 100%;
 }
 
 .link-text { 
@@ -327,7 +352,7 @@ html, body {
   text-decoration: underline; 
 }
 
-
+/* Donut Progress Chart */
 .circle-progress-wrapper { 
   display: flex; 
   gap: 20px; 
@@ -340,7 +365,6 @@ html, body {
   width: 104px;
   height: 104px;
   border-radius: var(--radius-full);
-  background: conic-gradient(var(--success) 0% 56%, #e2e8f0 56% 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,6 +411,7 @@ html, body {
   margin: 0; 
   gap: 10px;
   color: var(--text-main);
+  text-align: left;
 }
 
 .progress-legend p > span:first-child {
@@ -397,6 +422,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
+  text-align: left;
 }
 
 .dot {
@@ -503,6 +529,7 @@ html, body {
   font-size: 13px; 
   font-weight: 500;
   gap: 8px;
+  text-align: left;
 }
 
 .due-list li small { 
@@ -510,123 +537,72 @@ html, body {
   white-space: nowrap; 
 }
 
-/* 1. ล็อกความสูงกล่อง Scroll ให้พอดี 3 แถวแบบเป๊ะๆ */
-.course-scroll-container {
-  max-height: 195px; /* ลดจาก 240px ลงมาให้ตัดขอบที่แถว 3 พอดี */
+/* Scroll Containers */
+.course-scroll-container,
+.assessment-scroll-container,
+.history-scroll-container {
+  max-height: 220px;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 6px;
   display: flex;
   flex-direction: column;
-  gap: 8px; /* ลดระยะห่างระหว่างแถวลง */
-}
-
-/* 2. ปรับแต่ละแถวให้กระชับขึ้น */
-.course-action-item {
-  padding: 8px 10px; /* ลด Padding บน-ล่าง */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-left: 3px solid #2563eb;
-  background: #fff;
-  border-radius: 4px;
-}
-
-/* 3. ปรับขนาดตัวอักษรและระยะบรรทัด */
-.course-title {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.course-action-item small {
-  font-size: 11px;
-  color: var(--sv-text-light, #64748b);
-  display: block;
-  margin-top: 2px;
-}
-
-/* 4. ลดขนาดปุ่มด้านขวา */
-.course-action-right {
-  display: flex;
-  align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
-.course-action-right .btn-success-sm,
-.course-action-right .btn-primary-sm {
-  padding: 5px 10px;
-  font-size: 12px;
-  border-radius: 6px;
-  height: fit-content;
-}
-
-/* 5. แต่ง Scrollbar ให้เรียบเนียนและบางลง */
-.course-scroll-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.course-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.course-scroll-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.course-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-.course-action-item, .announcement-item {
+/* ==========================================================================
+   FIXED: COURSE ACTION ITEM & ANNOUNCEMENT (บังคับจัดชิดซ้ายทั้งหมด)
+   ========================================================================== */
+.course-action-item, 
+.announcement-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 15px;
-  padding: 12px 10px;
+  font-size: 14px;
+  padding: 10px 12px;
+  background: #fff;
   border-bottom: 1px solid #f1f5f9;
-  gap: 14px;
-}
-
-.course-action-item {
   border-left: 3.5px solid var(--primary);
   border-radius: 0 4px 4px 0;
+  gap: 12px;
+  width: 100%;
+  text-align: left !important;
 }
 
 .course-action-item.border-red {
   border-left: 3.5px solid var(--danger);
 }
 
-.course-action-item:last-child, 
-.announcement-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
+/* บังคับกล่องข้อความฝั่งซ้ายของ Course Action ให้กว้างเต็มและชิดซ้าย */
 .course-action-item > div:first-child {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
+  align-items: flex-start !important;
+  justify-content: center;
+  text-align: left !important;
 }
 
 .course-title { 
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600; 
   color: var(--text-main); 
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0 0 2px 0;
-  text-align: left;
   word-break: break-word;
+  text-align: left !important;
+  display: block;
+  width: 100%;
 }
 
 .course-action-item small { 
   color: var(--text-muted); 
-  font-size: 12px;
-  text-align: left;
-  line-height: 1.3;
+  font-size: 11px;
+  text-align: left !important;
+  display: block;
+  width: 100%;
 }
 
 .course-action-right { 
@@ -635,6 +611,7 @@ html, body {
   gap: 10px; 
   font-weight: 600; 
   flex-shrink: 0; 
+  margin-left: auto;
 }
 
 .counter-pill { 
@@ -651,201 +628,140 @@ html, body {
   color: var(--danger); 
 }
 
+/* Announcement Item */
+.announcement-item {
+  border-left: 3.5px solid var(--primary);
+}
 
+.announcement-item span {
+  text-align: left;
+  flex: 1;
+}
+
+.announcement-item small {
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+/* Assessments */
 .assessment-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f1f5f9;
   width: 100%;
-}
-
-.assessment-item:last-child {
-  border-bottom: none;
+  text-align: left;
 }
 
 .assessment-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
+  flex: 1;
+  min-width: 0;
 }
 
 .assessment-detail {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   text-align: left;
+  flex: 1;
+  min-width: 0;
 }
 
 .assessment-detail .course-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-main);
-  line-height: 1.2;
-}
-/* กล่อง Scroll ล็อก 3 รายการสำหรับผลการประเมินล่าสุด */
-.assessment-scroll-container {
-  max-height: 204px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 4px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ปรับแต่ง Scrollbar ให้เรียบเนียน */
-.assessment-scroll-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.assessment-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.assessment-scroll-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.assessment-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  text-align: left !important;
 }
 
 .eval-date-sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 2px;
+  text-align: left;
 }
 
 .status-badge-circle {
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
 .score-val { 
-  font-size: 14px; 
+  font-size: 13px; 
   font-weight: 700; 
-  white-space: nowrap; 
-  text-align: right;
   flex-shrink: 0;
+  text-align: right;
 }
 
-/* History Card */
+/* History Rows */
 .history-row {
   display: grid;
   grid-template-columns: 1fr auto 50px;
   align-items: center;
   gap: 12px;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 15px;
-}
-
-.history-row:last-child {
-  border-bottom: none;
+  font-size: 13px;
+  text-align: left;
 }
 
 .history-row > span:first-child {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
+  text-align: left;
 }
 
 .history-row b {
   text-align: right;
   font-weight: 700;
-  color: var(--text-main);
-}
-
-/* กล่อง Scroll ล็อก 3 รายการสำหรับประวัติการเรียนล่าสุด */
-.history-scroll-container {
-  max-height: 204px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 4px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ตกแต่ง Scrollbar ให้เพรียวบาง */
-.history-scroll-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.history-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.history-scroll-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.history-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 
 .status-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 75px;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 600;
-  text-align: center;
 }
 
-.status-tag.green {
-  background: var(--success-light);
-  color: #047857;
-}
+.status-tag.green { background: var(--success-light); color: #047857; }
+.status-tag.yellow { background: var(--warning-light); color: #b45309; }
 
-.status-tag.yellow {
-  background: var(--warning-light);
-  color: #b45309;
-}
+/* Contacts */
 .contact-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .contact-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #f1f5f9;
-  width: 100%;
-}
-
-.contact-row:last-child {
-  border-bottom: none;
+  text-align: left;
 }
 
 .contact-left {
   display: flex;
   align-items: center;
-  gap: 10px; 
+  gap: 10px;
   text-align: left;
 }
 
 .contact-avatar { 
-  font-size: 18px; 
+  font-size: 16px; 
   background: #f1f5f9; 
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%; 
   display: flex;
   align-items: center;
@@ -856,46 +772,15 @@ html, body {
 .contact-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
   gap: 2px;
+  text-align: left;
 }
 
-.contact-role {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-muted, #64748b);
-  line-height: 1.2;
-}
+.contact-role { font-size: 11px; color: var(--text-muted); text-align: left; }
+.contact-name { font-size: 13px; font-weight: 600; color: var(--text-main); text-align: left; }
+.contact-tel { font-size: 12px; font-weight: 600; color: var(--text-main); }
 
-.contact-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-main, #1e293b);
-  line-height: 1.2;
-}
-
-.contact-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.contact-tel { 
-  font-size: 13px; 
-  color: var(--text-main, #334155); 
-  font-weight: 600; 
-  cursor: pointer; 
-  white-space: nowrap; 
-}
-
-.contact-chat-icon {
-  font-size: 14px;
-  cursor: pointer;
-}
-
-
+/* Buttons & UI Helpers */
 .btn-outline {
   border: 1px solid #cbd5e1;
   color: var(--text-main);
@@ -915,64 +800,32 @@ html, body {
   color: var(--primary);
 }
 
-.btn-primary-sm { 
-  background: var(--primary); 
-  color: #fff; 
-  border: none; 
-  padding: 6px 14px; 
-  border-radius: var(--radius-sm); 
-  cursor: pointer; 
-  font-family: inherit;
-  font-size: 12px; 
-  font-weight: 500;
-  transition: var(--transition);
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
-  white-space: nowrap;
-}
-
-.btn-primary-sm:hover { 
-  background: var(--primary-hover); 
-  transform: translateY(-1px);
-}
-
-.btn-success-sm {
-  background: var(--success);
-  color: #ffffff !important;
-  border: none;
-  padding: 6px 14px;
+.btn-primary-sm, .btn-success-sm, .btn-outline-danger-sm {
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+  border: none;
   transition: var(--transition);
-  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
 }
 
-.btn-success-sm:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
+.btn-primary-sm { background: var(--primary); color: #fff; }
+.btn-primary-sm:hover { background: var(--primary-hover); }
 
-.btn-outline-danger-sm { 
-  border: 1px solid #fca5a5; 
-  color: var(--danger); 
-  background: var(--danger-light); 
-  padding: 5px 12px; 
-  border-radius: var(--radius-sm); 
-  cursor: pointer; 
-  font-family: inherit;
-  font-size: 12px; 
-  font-weight: 500;
-  transition: var(--transition);
-  white-space: nowrap;
-}
+.btn-success-sm { background: var(--success); color: #fff !important; }
+.btn-success-sm:hover { background: #059669; }
 
-.btn-outline-danger-sm:hover { 
-  background: var(--danger); 
-  color: #fff; 
-  border-color: var(--danger);
+.btn-outline-danger-sm {
+  border: 1px solid #fca5a5;
+  color: var(--danger);
+  background: var(--danger-light);
+}
+.btn-outline-danger-sm:hover {
+  background: var(--danger);
+  color: #fff;
 }
 
 .w-100 { width: 100%; }
@@ -984,22 +837,19 @@ html, body {
 .text-danger { color: var(--danger) !important; }
 .text-muted { color: var(--text-muted) !important; }
 
-/* Footer Banner */
 .dash-footer-tip {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border: 1px solid #bfdbfe;
-  padding: 14px 24px;
+  padding: 14px 20px;
   border-radius: var(--radius-md);
   font-size: 13px;
   color: #1e40af;
   text-align: center;
-  font-weight: 400;
-  box-shadow: var(--shadow-sm);
-  width: 100%;
-  box-sizing: border-box;
 }
 
-
+/* ==========================================================================
+   MODAL & CHECKMARK ANIMATION
+   ========================================================================== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1017,23 +867,18 @@ html, body {
 
 .modal-card {
   background: #ffffff;
-  padding: 32px 28px;
+  padding: 30px;
   border-radius: 16px;
   width: 90%;
   max-width: 400px;
   text-align: center;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.modal-icon-success {
-  font-size: 42px;
-  margin-bottom: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .modal-card h3 {
   margin: 0 0 8px 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--success);
 }
@@ -1042,7 +887,7 @@ html, body {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .modal-action-btns {
@@ -1060,7 +905,7 @@ html, body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
 }
 
 .btn-view-pdf:hover {
@@ -1074,16 +919,14 @@ html, body {
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 13px;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
 }
 
 .btn-close-modal:hover {
   background: #f8fafc;
   color: var(--text-muted);
 }
-
 
 .success-checkmark {
   width: 64px;
@@ -1100,7 +943,7 @@ html, body {
   border-radius: 50%;
   display: block;
   stroke-width: 3.5;
-  stroke: #10b981; /* สีเขียว */
+  stroke: #10b981;
   stroke-miterlimit: 10;
   box-shadow: inset 0px 0px 0px #10b981;
   animation: fillCircle 0.4s ease-in-out 0.4s forwards, scaleBounce 0.3s ease-in-out 0.8s both;
@@ -1122,6 +965,7 @@ html, body {
   stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+  stroke: #10b981;
   animation: strokeCheck 0.35s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
 }
 
@@ -1139,7 +983,7 @@ html, body {
 
 @keyframes fillCircle {
   100% {
-    box-shadow: inset 0px 0px 0px 32px rgba(16, 185, 129, 0.12); 
+    box-shadow: inset 0px 0px 0px 32px rgba(16, 185, 129, 0.12);
   }
 }
 
@@ -1148,7 +992,7 @@ html, body {
     transform: none;
   }
   50% {
-    transform: scale3d(1.1, 1.1, 1); 
+    transform: scale3d(1.1, 1.1, 1);
   }
 }
 
@@ -1162,54 +1006,133 @@ html, body {
   to { transform: scale(1); opacity: 1; }
 }
 
-
-@media (max-width: 1180px) {
+/* ==========================================================================
+   3. TABLET LAYOUT (769px - 1024px)
+   ========================================================================== */
+@media screen and (max-width: 1024px) {
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
   .grid-3-col {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+/* ==========================================================================
+   4. MOBILE LAYOUT (≤ 768px)
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  .dashboard-wrapper {
+    padding: 12px;
+    gap: 16px;
+  }
+
   .dash-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+
+  .user-name-highlight {
+    font-size: 19px;
   }
 
   .header-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .stats-row {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stats-row .stat-box:last-child {
+    grid-column: span 2;
+  }
+
+  .stat-box {
+    padding: 12px 10px;
+    gap: 10px;
+  }
+
+  .box-icon {
+    font-size: 18px;
+    padding: 8px;
+  }
+
+  .stat-num {
+    font-size: 18px;
+  }
+
+  .stat-label, .stat-unit {
+    font-size: 12px;
   }
 
   .grid-3-col {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
-}
 
-@media (max-width: 480px) {
-  .stats-row {
-    grid-template-columns: 1fr;
+  .card {
+    padding: 16px;
   }
 
   .circle-progress-wrapper {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    gap: 16px;
   }
 
-  .course-action-item,
-  .assessment-item,
-  .contact-row,
-  .due-list li {
+  .progress-legend {
+    width: 100%;
+  }
+
+  .plan-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
 
+  .plan-item > span {
+    width: 100%;
+  }
+
+  .plan-item .progress-bar-bg {
+    width: 100%;
+  }
+
+  .plan-item small {
+    text-align: left;
+    width: 100%;
+  }
+
+  .course-action-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .course-action-right {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .assessment-item {
+    align-items: flex-start;
+  }
+
+  .contact-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .contact-right {
+    width: 100%;
+    justify-content: space-between;
+    padding-left: 44px;
   }
 }

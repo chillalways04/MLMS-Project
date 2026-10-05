@@ -1,160 +1,206 @@
-.button {
-  width: 220px;
-  height: 34px;
-  border-radius: 14px;
-  font-size: medium;
-  margin-top: 1%;
+/* ==========================================================================
+   1. GLOBAL CONTAINER & BASE STYLES
+   ========================================================================== */
+* {
+  box-sizing: border-box;
 }
 
 .container {
   width: 100%;
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   background-image: url("https://www.baltana.com/files/wallpapers-5/Blue-Background-Wallpaper-HD-16273.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding: 20px;
-  box-sizing: border-box;
+  padding: 24px;
 }
 
+/* ==========================================================================
+   2. DESKTOP CARD & FORM STYLES (ค่าเริ่มต้นบนจอคอมพิวเตอร์)
+   ========================================================================== */
 .card-1 {
-  background-color: rgb(245, 248, 255);
-  width: 90%;
-  max-width: 550px;
-  min-height: 560px;
-  border-radius: 13px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 36px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  box-sizing: border-box;
+  align-items: stretch;
+  gap: 14px;
 }
 
 .card-1:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.15);
 }
 
 .card-1 h2 {
-  font-size: 30px;
-  margin-top: 10%;
-  margin-bottom: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+  text-align: center;
 }
 
 .card-1 h1 {
-  font-size: 15px;
-  margin-top: -1%;
-  color: #b8bbbe;
-  font-weight: 100;
+  font-size: 13px;
+  color: #cbd5e1;
+  font-weight: 400;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.card-1 h4 {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 400;
+  margin: 0;
+  text-align: center;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+  margin: 0 0 6px 0;
+  border: 1px solid #fecaca;
 }
 
 .card-1 label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #444;
-  width: 50%;
+  color: #334155;
   text-align: left;
-  margin-bottom: -15px;
+  margin-top: 4px;
 }
 
 .card-1 input {
-  width: 50%;
-  padding: 12px;
-  border: 2px solid #e7e7e7;
+  width: 100%;
+  height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
   border-radius: 10px;
-  box-sizing: border-box;
   outline: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-1 input:focus {
   border-color: #0e90e0;
-  box-shadow: 0 0 0 3px rgba(14, 144, 224, 0.1);
+  box-shadow: 0 0 0 3px rgba(14, 144, 224, 0.15);
 }
 
-.card-1 button {
-  width: 50%;
-  height: 39px;
-  border-radius: 10px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  color: rgb(255, 255, 255);
-  font-weight: 600;
-  font-size: 15px;
-  margin-top: -26px;
-  background-color: #0e90e0;
-  transition: all 0.25s ease;
+/* Password Input & Toggle Button */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
-.card-1 button:hover {
+.password-input-wrapper input {
+  width: 100% !important;
+  padding-right: 44px !important;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  border: none !important;
   cursor: pointer;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  background-color: #2383bb;
+  padding: 4px !important;
+  margin: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none !important;
+  outline: none;
+  color: #94a3b8;
+  transition: color 0.2s ease;
 }
 
-.card-1 h3 {
-  font-size: small;
-  color: #abb3b8;
-  margin-top: -16px;
-  margin-left: 35%;
-  font-weight: 100;
+.toggle-password-btn:hover {
+  color: #0e90e0;
+  transform: translateY(-50%) scale(1.1) !important;
 }
 
-.card-1 h4 {
-  margin-top: -8%;
-  font-size: small;
-  color: #abb3b8;
-  font-weight: 100;
-}
-
-.card-1 .regis-btn {
-  width: 50%;
-  height: 39px;
-  border-radius: 10px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  color: rgb(255, 255, 255);
-  font-weight: 600;
-  font-size: 15px;
-  margin-top: -26px;
-  background-color: #e7e410;
-  transition: all 0.25s ease;
-}
-
-.card-1 .regis-btn:hover {
-  cursor: pointer;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  background-color: #d4cf0d;
-}
-
+/* Forgot Password Link */
 .forgot-password-link {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s ease-in-out;
-  display: inline-block;
+  align-self: flex-end;
+  margin: 0;
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
 
 .forgot-password-link:hover {
-  font-weight: 700;
   color: #0284c7;
 }
 
-.forgot-password-link:active {
-  font-weight: 800;
-  color: #0369a1;
-  transform: scale(0.97);
+/* Submit & Registration Buttons */
+.card-1 button[type="submit"] {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background-color: #0e90e0;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.2s ease;
 }
 
+.card-1 button[type="submit"]:hover:not(:disabled) {
+  background-color: #0284c7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 144, 224, 0.25);
+}
+
+.card-1 button[type="submit"]:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.card-1 .regis-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background-color: #eab308;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-1 .regis-btn:hover:not(:disabled) {
+  background-color: #ca8a04;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.25);
+}
+
+/* Modal Popup (ถ้ามีใช้งานในหน้า Login) */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -173,7 +219,6 @@
   width: 100%;
   max-width: 380px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;
 }
 
 .modal-title {
@@ -224,7 +269,6 @@
   border-radius: 8px;
   border: 1px solid #cbd5e1;
   margin-top: 4px;
-  box-sizing: border-box;
 }
 
 .modal-actions {
@@ -270,178 +314,39 @@
   cursor: not-allowed;
 }
 
-.password-input-wrapper {
-  position: relative;
-  width: 50%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-}
-
-.password-input-wrapper input {
-  width: 100% !important;
-  box-sizing: border-box !important;
-  padding-right: 44px !important;
-}
-
-.toggle-password-btn {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%) !important;
-  background: transparent !important;
-  border: none !important;
-  cursor: pointer;
-  padding: 0 !important;
-  margin: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none !important;
-  outline: none;
-  z-index: 2;
-  user-select: none;
-}
-
-.toggle-password-btn i,
-.toggle-password-btn svg {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  color: #94a3b8;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.toggle-password-btn:hover i,
-.toggle-password-btn:hover svg {
-  color: #0e90e0;
-  transform: scale(1.1);
-}
-
-.toggle-password-btn:active i,
-.toggle-password-btn:active svg {
-  transform: scale(0.95);
-}
-
-@media (max-width: 1024px) {
-  .card-1 {
-    width: 55%;
-    height: auto;
-    min-height: 65vh;
-    padding: 30px 0;
-  }
-
-  .card-1 input,
-  .card-1 button,
-  .card-1 .regis-btn,
-  .card-1 label,
-  .password-input-wrapper {
-    width: 65%;
-  }
-
-  .card-1 h2 {
-    font-size: 30px;
-  }
-}
-
-@media (max-width: 767px) {
+/* ==========================================================================
+   3. MOBILE RESPONSIVE (สมาร์ตโฟนหน้าจอ ≤ 600px)
+   ========================================================================== */
+@media screen and (max-width: 600px) {
   .container {
-    min-height: 100vh;
-    padding: 15px;
+    padding: 16px;
+    align-items: center;
   }
 
   .card-1 {
-    width: 90%;
-    height: auto;
-    min-height: auto;
-    padding: 30px 0 40px;
-    gap: 18px;
-    border-radius: 15px;
-  }
-
-  .card-1 input,
-  .card-1 button,
-  .card-1 .regis-btn,
-  .card-1 label,
-  .password-input-wrapper {
-    width: 75%;
+    max-width: 100%;
+    padding: 32px 20px;
+    gap: 12px;
+    border-radius: 14px;
   }
 
   .card-1 h2 {
-    font-size: 28px;
-    margin-top: 5%;
-    margin-bottom: 0;
+    font-size: 22px;
   }
 
-  .card-1 h1 {
-    font-size: 14px;
-  }
-
+  /* ใช้ขนาด 16px ป้องกันไม่ให้ Safari/Chrome บนมือถือซูมหน้าจอเข้าเวลาพิมพ์ */
   .card-1 input {
-    padding: 11px;
-    font-size: 14px;
+    font-size: 16px;
+    height: 46px;
   }
 
-  .card-1 button,
+  .card-1 button[type="submit"],
   .card-1 .regis-btn {
-    height: 42px;
-    margin-top: -10px;
+    height: 46px;
+    font-size: 15px;
   }
 
-  .card-1 h3 {
+  .forgot-password-link {
     font-size: 12px;
-    margin-left: 0;
-    align-self: center;
-  }
-
-  .card-1 h4 {
-    font-size: 12px;
-    margin-top: -3%;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 10px;
-  }
-
-  .card-1 {
-    width: 95%;
-    padding: 25px 0 35px;
-    gap: 16px;
-  }
-
-  .card-1 input,
-  .card-1 button,
-  .card-1 .regis-btn,
-  .card-1 label,
-  .password-input-wrapper {
-    width: 82%;
-  }
-
-  .card-1 h2 {
-    font-size: 25px;
-  }
-
-  .card-1 h1 {
-    font-size: 13px;
-  }
-
-  .card-1 input {
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  .card-1 button,
-  .card-1 .regis-btn {
-    height: 40px;
-    font-size: 14px;
-  }
-
-  .card-1 h3,
-  .card-1 h4 {
-    font-size: 11px;
   }
 }

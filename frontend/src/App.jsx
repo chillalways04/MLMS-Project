@@ -14,7 +14,7 @@ function App() {
         <Route path="/" element={<OrgFilter/>} />
         <Route path="/login" element={<Login/>} />
         <Route path="/dashboard" element={<Dashboard/>} />
-        <Route path="/certificate" element={<Certificate/>} />
+        <Route path="/certificate/:uuid" element={<Certificate/>} />
         <Route path="/verify/:uuid" element={<VerifyCertificate/>} /> 
         <Route path="/register" element={<Register/>}/>
       </Routes>

@@ -7,9 +7,16 @@ const bcrypt = require('bcryptjs');
 const helmet = require('helmet');                   
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid'); 
+const jwt = require('jsonwebtoken');
 
 const SECRET_KEY = process.env.JWT_SECRET;
-console.log("Secret Key Loaded:", SECRET_KEY ? "Yes" : "No");
+
+if (!SECRET_KEY || Buffer.byteLength(SECRET_KEY, 'utf8') < 32) {
+  throw new Error('กรุณาตั้ง JWT_SECRET แบบสุ่มอย่างน้อย 32 bytes ในไฟล์ .env');
+}
+
+const JWT_ISSUER = 'training-api';
+const JWT_AUDIENCE = 'training-client';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -17,6 +24,21 @@ const port = process.env.PORT || 5000;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+app.use((req, _res, next) => {
+  console.log(`[INCOMING REQUEST] ${req.method} ${req.url} - เวลา: ${new Date().toLocaleTimeString()}`);
+  next();
+});
+
+// ป้องกัน Brute-force การสุ่มรหัสผ่าน
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { 
+    success: false, 
+    message: 'คุณพยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอ 15 นาทีแล้วลองใหม่อีกครั้ง' 
+  }
+});
 
 const verifyLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
@@ -30,20 +52,147 @@ const verifyLimiter = rateLimit({
 const dbPath = path.resolve(__dirname, 'Alldata.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.log(err.message);
+    console.error('Database connection error:', err.message);
+  } else {
+    console.log('Connect to Database.');
   }
-  console.log('Connect to Database.');
 
-  db.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
-    if (pragmaErr) console.error('เปิด Foreign Key ล้มเหลว:', pragmaErr);
-    else console.log('เปิดใช้งาน Foreign Key Support เรียบร้อย');
+  db.serialize(() => {
+    db.run('PRAGMA foreign_keys = ON;');
+
+    // 1. ลบแถวที่ user_id + course_id ซ้ำกัน โดยเก็บเฉพาะแถวที่มี ID แรกสุดไว้
+    const cleanupDuplicateSql = `
+      DELETE FROM certificates
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid)
+        FROM certificates
+        GROUP BY user_id, course_id
+      );
+    `;
+
+    db.run(cleanupDuplicateSql, (cleanErr) => {
+      if (cleanErr) {
+        console.error('ล้างข้อมูลใบเซอร์ที่ซ้ำล้มเหลว:', cleanErr.message);
+        return;
+      }
+
+      // 2. เมื่อไม่มีข้อมูลซ้ำแล้ว ให้สร้าง UNIQUE INDEX ได้อย่างปลอดภัย
+      db.run(
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_cert_user_course ON certificates(user_id, course_id);`,
+        (idxErr) => {
+          if (idxErr) {
+            console.error('สร้าง Unique Index certificates ล้มเหลว:', idxErr.message);
+          } else {
+            console.log('สร้าง/ตรวจสอบ Unique Index certificates สำเร็จ (ป้องกันใบเซอร์ซ้ำถาวร)');
+          }
+        }
+      );
+    });
   });
 });
 
+// ตรวจสอบ Token และดึงข้อมูลผู้ใช้
+function authenticateToken(req, res, next) {
+  const authorization = req.get('Authorization');
+  const match = typeof authorization === 'string'
+    ? /^Bearer\s+(\S+)$/i.exec(authorization)
+    : null;
+
+  if (!match) {
+    return res.status(401).json({
+      success: false,
+      message: 'กรุณาเข้าสู่ระบบก่อนใช้งาน'
+    });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(match[1], SECRET_KEY, {
+      algorithms: ['HS256'],
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE
+    });
+
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      typeof payload.sub !== 'string' ||
+      !/^[1-9]\d*$/.test(payload.sub) ||
+      !Number.isSafeInteger(Number(payload.sub)) ||
+      !Number.isInteger(payload.exp)
+    ) {
+      throw new Error('Invalid token claims');
+    }
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'การเข้าสู่ระบบไม่ถูกต้องหรือหมดอายุ กรุณาเข้าสู่ระบบใหม่'
+    });
+  }
+
+  const sql = `
+    SELECT id, role_id, team_id, employee_code, first_name, last_name, position
+    FROM users
+    WHERE id = ?
+  `;
+
+  db.get(sql, [payload.sub], (err, user) => {
+    if (err) {
+      console.error('Authentication database error:', err.message);
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถตรวจสอบผู้ใช้ได้'
+      });
+    }
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'ไม่พบผู้ใช้ กรุณาเข้าสู่ระบบใหม่'
+      });
+    }
+
+    req.user = user;
+    next();
+  });
+}
+
+function requireSupervisor(req, res, next) {
+  if (Number(req.user.role_id) !== 3) {
+    return res.status(403).json({
+      success: false,
+      message: 'สำหรับหัวหน้างานเท่านั้น'
+    });
+  }
+  next();
+}
+
+function requireOwnUserId(req, res, next) {
+  if (req.params.userId !== String(req.user.id)) {
+    return res.status(403).json({
+      success: false,
+      message: 'ไม่มีสิทธิ์เข้าถึงข้อมูลผู้ใช้อื่น'
+    });
+  }
+  next();
+}
+
+function requireOwnSupervisorId(req, res, next) {
+  if (req.params.supervisorId !== String(req.user.id)) {
+    return res.status(403).json({
+      success: false,
+      message: 'ไม่มีสิทธิ์เข้าถึงข้อมูลหัวหน้างานอื่น'
+    });
+  }
+  next();
+}
+
+/* ==========================================================================
+   PUBLIC ROUTES
+   ========================================================================== */
 
 app.get('/api/lines', (req, res) => {
   const { user_id } = req.query;
-
   if (user_id) {
     const sql = `
       SELECT DISTINCT l.id, l.name
@@ -97,10 +246,8 @@ app.get('/api/teams', (req, res) => {
   });
 });
 
-
 app.get('/api/courses', (req, res) => {
   const sql = 'SELECT id, title, description FROM courses ORDER BY id ASC';
-
   db.all(sql, [], (err, rows) => {
     if (err) {
       console.error("Fetch courses error:", err.message);
@@ -109,34 +256,19 @@ app.get('/api/courses', (req, res) => {
         message: "เกิดข้อผิดพลาดในการดึงข้อมูลหลักสูตร" 
       });
     }
-
-    res.json({
-      success: true,
-      data: rows
-    });
+    res.json({ success: true, data: rows });
   });
 });
 
-
-app.post('/api/login', (req, res) => {
+// LOGIN: ไม่ JOIN ตาราง certificates เพื่อป้องกันข้อมูลหลักสูตรสับสน
+app.post('/api/login', loginLimiter, (req, res) => {
   const { employee_code, password } = req.body;
   
   if (!employee_code || !password) {
     return res.status(400).json({ success: false, message: 'กรุณากรอกรหัสพนักงานและรหัสผ่าน' });
   }
 
-  const sql = `
-    SELECT 
-      users.*, 
-      certificates.verification_code, 
-      certificates.uuid AS cert_uuid,
-      certificates.issued_at,
-      cr.title AS course_title
-    FROM users 
-    LEFT JOIN certificates ON users.id = certificates.user_id 
-    LEFT JOIN courses cr ON certificates.course_id = cr.id
-    WHERE users.employee_code = ?
-  `;
+  const sql = `SELECT * FROM users WHERE employee_code = ?`;
         
   db.get(sql, [employee_code], async (err, user) => {
     if (err) {
@@ -152,7 +284,6 @@ app.post('/api/login', (req, res) => {
       const inputPassword = password ? String(password).trim() : "";
       
       let isMatch = false;
-
       if (dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$')) {
         isMatch = await bcrypt.compare(inputPassword, dbPassword);
       } else {
@@ -170,17 +301,26 @@ app.post('/api/login', (req, res) => {
         last_name: user.last_name,
         position: user.position,
         role_id: user.role_id,
-        team_id: user.team_id,
-        verification_code: user.verification_code, 
-        cert_uuid: user.cert_uuid,
-        course_title: user.course_title,
-        issued_at: user.issued_at
+        team_id: user.team_id
       };
 
-      res.json({
+      const token = jwt.sign({}, SECRET_KEY, {
+        algorithm: 'HS256',
+        subject: String(user.id),
+        issuer: JWT_ISSUER,
+        audience: JWT_AUDIENCE,
+        expiresIn: '8h'
+      });
+
+      res.set('Cache-Control', 'no-store');
+
+      return res.json({
         success: true,
         message: 'เข้าสู่ระบบสำเร็จ',
-        user: safeUserData 
+        token,
+        token_type: 'Bearer',
+        expires_in: 28800,
+        user: safeUserData
       });
 
     } catch (compareErr) {
@@ -202,9 +342,9 @@ app.post('/api/register', async (req, res) => {
 
   const getRoleId = (pos) => {
     if (!pos) return 1;
-    const p = pos.toLowerCase();
-    if (p.includes('supervisor')) return 3;
-    if (p.includes('leader')) return 2;
+    const p = pos.trim().toLowerCase();
+    if (p === 'supervisor' || p === 'หัวหน้างาน') return 3;
+    if (p === 'leader' || p === 'หัวหน้ากะ') return 2;
     return 1;
   };
 
@@ -227,9 +367,9 @@ app.post('/api/register', async (req, res) => {
     `;
 
     const params = [
-      employee_code,
-      first_name,
-      last_name,
+      employee_code.trim(),
+      first_name.trim(),
+      last_name.trim(),
       position || 'Operator A',
       roleId,
       team_id,
@@ -259,9 +399,77 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// ตรวจสอบใบเซอร์ผ่าน QR Code
+app.get('/api/verify-cert/:uuid', verifyLimiter, (req, res) => {
+  const { uuid } = req.params;
+  const sql = `
+    SELECT 
+      c.uuid,
+      c.verification_code,
+      c.issued_at,
+      u.first_name,
+      u.last_name,
+      u.employee_code,
+      u.position,
+      cr.title AS course_title
+    FROM certificates c
+    JOIN users u ON c.user_id = u.id
+    JOIN courses cr ON c.course_id = cr.id
+    WHERE c.uuid = ?
+  `;
 
-app.get('/api/user-dashboard/:userId', (req, res) => {
-  const { userId } = req.params;
+  db.get(sql, [uuid], (err, certData) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: "เกิดข้อผิดพลาดภายในระบบฐานข้อมูล" });
+    }
+
+    if (!certData) {
+      return res.status(404).json({ success: false, message: "ไม่พบข้อมูลใบประกาศนียบัตรนี้ในระบบ" });
+    }
+
+    res.json({ success: true, data: certData });
+  });
+});
+
+/* ==========================================================================
+   PROTECTED ROUTES
+   ========================================================================== */
+
+// ดึงรายละเอียดใบเซอร์สำหรับแสดงผลหน้า Certificate.jsx
+app.get('/api/certificates/:uuid', authenticateToken, (req, res) => {
+  const { uuid } = req.params;
+  const sql = `
+    SELECT 
+      c.uuid,
+      c.verification_code,
+      c.issued_at,
+      u.first_name,
+      u.last_name,
+      u.employee_code,
+      u.position,
+      cr.title AS course_title
+    FROM certificates c
+    JOIN users u ON c.user_id = u.id
+    JOIN courses cr ON c.course_id = cr.id
+    WHERE c.uuid = ?
+  `;
+
+  db.get(sql, [uuid], (err, certData) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: "เกิดข้อผิดพลาดในฐานข้อมูล" });
+    }
+
+    if (!certData) {
+      return res.status(404).json({ success: false, message: "ไม่พบใบประกาศนียบัตรนี้" });
+    }
+
+    res.json({ success: true, data: certData });
+  });
+});
+
+// Dashboard พนักงาน: ใช้ ON CONFLICT DO NOTHING ป้องกันใบเซอร์ซ้ำ
+app.get('/api/user-dashboard/:userId', authenticateToken, requireOwnUserId, (req, res) => {
+  const userId = req.user.id;
 
   const sql = `
     SELECT 
@@ -283,7 +491,6 @@ app.get('/api/user-dashboard/:userId', (req, res) => {
 
   db.all(sql, [userId], async (err, rows) => {
     if (err) {
-      console.error("Dashboard Fetch Error:", err.message);
       return res.status(500).json({ success: false, message: err.message });
     }
 
@@ -297,6 +504,7 @@ app.get('/api/user-dashboard/:userId', (req, res) => {
       let verificationCode = row.verification_code;
       let issuedAt = row.issued_at;
 
+      // ถ้าสอบผ่านแต่ยังไม่มีใบเซอร์ ให้สร้างลง DB ทันที
       if (isPassed && !certUuid) {
         certUuid = uuidv4();
         const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -311,16 +519,28 @@ app.get('/api/user-dashboard/:userId', (req, res) => {
         const insertCertSql = `
           INSERT INTO certificates (uuid, verification_code, user_id, course_id, pdf_url, issued_at)
           VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id, course_id) DO NOTHING
         `;
 
         await new Promise((resolve) => {
-          db.run(insertCertSql, [certUuid, verificationCode, userId, row.course_id, pdfUrl, issuedAt], (insertErr) => {
-            if (insertErr) {
-              console.error("Auto Insert Cert Error:", insertErr.message);
+          db.run(insertCertSql, [certUuid, verificationCode, userId, row.course_id, pdfUrl, issuedAt], function(insertErr) {
+            // ถ้ามีการ Insert ซ้ำพร้อมกัน (changes = 0) ให้ดึงใบที่มีอยู่แล้วมาใช้
+            if (!insertErr && this.changes === 0) {
+              db.get(
+                `SELECT uuid, verification_code, issued_at FROM certificates WHERE user_id = ? AND course_id = ?`,
+                [userId, row.course_id],
+                (_fErr, existing) => {
+                  if (existing) {
+                    certUuid = existing.uuid;
+                    verificationCode = existing.verification_code;
+                    issuedAt = existing.issued_at;
+                  }
+                  resolve();
+                }
+              );
             } else {
-              console.log(`[AUTO-CERT] สร้างใบเซอร์สำเร็จ: คอร์ส ${row.course_title} ให้ User ID: ${userId}`);
+              resolve();
             }
-            resolve();
           });
         });
       }
@@ -339,64 +559,15 @@ app.get('/api/user-dashboard/:userId', (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      data: processedList
-    });
+    res.json({ success: true, data: processedList });
   });
 });
 
-app.get('/api/verify-cert/:uuid', verifyLimiter, (req, res) => {
-  const { uuid } = req.params;
-  console.log(`[VERIFY] กำลังตรวจสอบใบรับรอง UUID: [${uuid}]`);
+// ดึงสรุปข้อมูลของ Supervisor
+app.get('/api/supervisor/dashboard-summary', authenticateToken, requireSupervisor, (req, res) => {
+  const supervisorId = req.user.id;
+  const { section_id, team_id } = req.query;
 
-  const sql = `
-    SELECT 
-      c.uuid,
-      c.verification_code,
-      c.issued_at,
-      u.first_name,
-      u.last_name,
-      u.employee_code,
-      u.position,
-      cr.title AS course_title
-    FROM certificates c
-    LEFT JOIN users u ON c.user_id = u.id
-    LEFT JOIN courses cr ON c.course_id = cr.id
-    WHERE c.uuid = ?
-  `;
-
-  db.get(sql, [uuid], (err, certData) => {
-    if (err) {
-      console.error("[ERROR] เกิดข้อผิดพลาดในฐานข้อมูล:", err.message);
-      return res.status(500).json({ 
-        success: false, 
-        message: "เกิดข้อผิดพลาดภายในระบบฐานข้อมูล" 
-      });
-    }
-
-    if (!certData) {
-      console.log(`[FAILED] ไม่พบ UUID [${uuid}] ในระบบ`);
-      return res.status(404).json({ 
-        success: false, 
-        message: "ไม่พบข้อมูลใบประกาศนียบัตรนี้ในระบบ" 
-      });
-    }
-
-    console.log(`[SUCCESS] ยืนยันสำเร็จ: คุณ${certData.first_name} ${certData.last_name} (${certData.course_title})`);
-
-    res.json({
-      success: true,
-      data: certData
-    });
-  });
-});
-
-
-app.get('/api/supervisor/dashboard-summary', (req, res) => {
-  const { supervisor_id, section_id, team_id } = req.query;
-
-  // 1. ตรวจสอบสิทธิ์และหา line_id ของ Supervisor ที่เรียก API
   const supSql = `
     SELECT s.line_id 
     FROM users u
@@ -405,14 +576,12 @@ app.get('/api/supervisor/dashboard-summary', (req, res) => {
     WHERE u.id = ? AND u.role_id = 3
   `;
 
-  db.get(supSql, [supervisor_id], (err, sup) => {
+  db.get(supSql, [supervisorId], (err, sup) => {
     if (err || !sup) {
       return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์เข้าถึง หรือไม่ใช่หัวหน้างาน' });
     }
 
     const boundLineId = sup.line_id;
-
-    // บังคับกรองเฉพาะพนักงาน (role_id = 1) ในสายการผลิตของตนเอง
     let filterCondition = 'WHERE u.role_id = 1 AND s.line_id = ?';
     const params = [boundLineId];
 
@@ -424,7 +593,6 @@ app.get('/api/supervisor/dashboard-summary', (req, res) => {
       params.push(section_id);
     }
 
-    // 1. ดึงข้อมูลพนักงานและการสอบทั้งหมด
     const sqlMembers = `
       SELECT 
         u.id AS user_id,
@@ -454,7 +622,6 @@ app.get('/api/supervisor/dashboard-summary', (req, res) => {
       ORDER BY u.id ASC, es.tested_at DESC
     `;
 
-    // 2. ดึง 5 อันดับวิชาที่ตกบ่อยที่สุด
     const sqlTopFailed = `
       SELECT 
         cr.title AS course_title,
@@ -471,7 +638,6 @@ app.get('/api/supervisor/dashboard-summary', (req, res) => {
       LIMIT 5
     `;
 
-    // 3. เปรียบเทียบสถิติแต่ละทีมเฉพาะในสายการผลิตเดียวกัน
     const sqlTeamCompare = `
       SELECT 
         t.name AS team_name,
@@ -487,7 +653,6 @@ app.get('/api/supervisor/dashboard-summary', (req, res) => {
       GROUP BY t.id, t.name
     `;
 
-    // 4. Activity Log ล่าสุด
     const sqlActivities = `
       SELECT 
         u.first_name,
@@ -533,76 +698,60 @@ app.get('/api/supervisor/dashboard-summary', (req, res) => {
   });
 });
 
-app.get('/api/supervisor/dashboard/:supervisorId', (req, res) => {
-  const { supervisorId } = req.params;
+app.get('/api/supervisor/dashboard/:supervisorId', authenticateToken, requireSupervisor, requireOwnSupervisorId, (req, res) => {
+  const supervisorId = req.user.id;
+  const sql = `
+    SELECT 
+      u.id AS employee_id,
+      u.employee_code,
+      u.first_name,
+      u.last_name,
+      u.position,
+      t.name AS team_name,
+      s.name AS section_name,
+      l.name AS line_name,
+      c.title AS course_title,
+      es.score,
+      es.status,
+      es.tested_at
+    FROM users u
+    JOIN teams t ON t.id = u.team_id
+    JOIN sections s ON s.id = t.section_id
+    JOIN lines l ON l.id = s.line_id
+    LEFT JOIN exam_scores es ON es.user_id = u.id
+    LEFT JOIN courses c ON c.id = es.course_id
+    WHERE u.role_id = 1 
+      AND s.line_id = (
+        SELECT s2.line_id 
+        FROM users u2
+        JOIN teams t2 ON t2.id = u2.team_id
+        JOIN sections s2 ON s2.id = t2.section_id
+        WHERE u2.id = ?
+      )
+    ORDER BY u.id ASC, c.id ASC
+  `;
 
-  const checkRoleSql = `SELECT id, role_id FROM users WHERE id = ?`;
-
-  db.get(checkRoleSql, [supervisorId], (err, user) => {
-    if (err || !user) {
-      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลผู้ใช้' });
+  db.all(sql, [supervisorId], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: err.message });
     }
-
-    if (user.role_id !== 3) {
-      return res.status(403).json({ success: false, message: 'ปฏิเสธการเข้าถึง: สำหรับหัวหน้างานเท่านั้น' });
-    }
-
-    const sql = `
-      SELECT 
-        u.id AS employee_id,
-        u.employee_code,
-        u.first_name,
-        u.last_name,
-        u.position,
-        t.name AS team_name,
-        s.name AS section_name,
-        l.name AS line_name,
-        c.title AS course_title,
-        es.score,
-        es.status,
-        es.tested_at
-      FROM users u
-      JOIN teams t ON t.id = u.team_id
-      JOIN sections s ON s.id = t.section_id
-      JOIN lines l ON l.id = s.line_id
-      LEFT JOIN exam_scores es ON es.user_id = u.id
-      LEFT JOIN courses c ON c.id = es.course_id
-      WHERE u.role_id = 1 
-        AND s.line_id = (
-          SELECT s2.line_id 
-          FROM users u2
-          JOIN teams t2 ON t2.id = u2.team_id
-          JOIN sections s2 ON s2.id = t2.section_id
-          WHERE u2.id = ?
-        )
-      ORDER BY u.id ASC, c.id ASC
-    `;
-
-    db.all(sql, [supervisorId], (err, rows) => {
-      if (err) {
-        return res.status(500).json({ success: false, error: err.message });
-      }
-
-      res.json({
-        success: true,
-        data: rows
-      });
-    });
+    res.json({ success: true, data: rows });
   });
 });
 
-// API สำหรับ Supervisor กดรีเซ็ตรหัสผ่านของพนักงานในสังกัด
-app.post('/api/supervisor/reset-user-password', async (req, res) => {
-  const { supervisor_id, target_user_id } = req.body;
+// API สำหรับ Supervisor รีเซ็ตรหัสผ่านพนักงาน
+app.post('/api/supervisor/reset-user-password', authenticateToken, requireSupervisor, async (req, res) => {
+  const supervisor_id = req.user.id;
+  const { target_user_id } = req.body || {};
 
-  if (!supervisor_id || !target_user_id) {
-    return res.status(400).json({ success: false, message: 'ข้อมูลไม่ครบถ้วน' });
+  if (!target_user_id) {
+    return res.status(400).json({ success: false, message: 'กรุณาระบุ target_user_id' });
   }
 
-  // 1. ตรวจสอบสิทธิ์: เช็กว่า Supervisor และ Operator อยู่ใน Line เดียวกันหรือไม่
   const checkScopeSql = `
     SELECT 
       sup.id AS supervisor_id,
+      sup.employee_code AS supervisor_code,
       tar.id AS target_user_id,
       tar.employee_code AS target_employee_code
     FROM users sup
@@ -618,29 +767,42 @@ app.post('/api/supervisor/reset-user-password', async (req, res) => {
   db.get(checkScopeSql, [target_user_id, supervisor_id], async (err, row) => {
     if (err) return res.status(500).json({ success: false, message: err.message });
     if (!row) {
-      return res.status(403).json({ success: false, message: 'คุณไม่มีสิทธิ์รีเซ็ตรหัสผ่านของพนักงานนอกสายการผลิตของคุณ' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'คุณไม่มีสิทธิ์รีเซ็ตรหัสผ่านของพนักงานนอกสายการผลิตของคุณ' 
+      });
     }
 
     try {
-      // 2. กำหนดรหัสผ่านเริ่มต้น (Default Password) เช่น "123456" หรือ "pass_" ตามด้วยรหัสพนักงาน
-      const defaultPassword = `pass_${row.target_employee_code.toLowerCase().replace('-', '')}`;
+      const defaultPassword = `pass_${String(row.target_employee_code || '').toLowerCase().replace('-', '')}`;
       const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-      // 3. อัปเดตรหัสผ่านลงฐานข้อมูล
       const updateSql = `UPDATE users SET password = ? WHERE id = ?`;
-      db.run(updateSql, [hashedPassword, target_user_id], (updateErr) => {
+      db.run(updateSql, [hashedPassword, target_user_id], function (updateErr) {
         if (updateErr) {
           return res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการอัปเดตรหัสผ่าน' });
         }
 
-        res.json({
-          success: true,
-          message: `รีเซ็ตรหัสผ่านสำเร็จ! รหัสผ่านชั่วคราวคือ: ${defaultPassword}`,
-          temp_password: defaultPassword
+        const logSql = `
+          INSERT INTO activities (user_id, activity_type, description, created_at)
+          VALUES (?, 'RESET_PASSWORD', ?, datetime('now', 'localtime'))
+        `;
+        const logDesc = `Supervisor ${row.supervisor_code} ได้ทำการรีเซ็ตรหัสผ่านให้แก่ ${row.target_employee_code}`;
+
+        db.run(logSql, [target_user_id, logDesc], (logErr) => {
+          if (logErr) {
+            console.error('Audit Log Error:', logErr.message);
+          }
+
+          return res.json({
+            success: true,
+            message: `รีเซ็ตรหัสผ่านสำเร็จ! รหัสผ่านชั่วคราวคือ: ${defaultPassword}`,
+            temp_password: defaultPassword
+          });
         });
       });
     } catch (error) {
-      console.error(error);
+      console.error('Reset password error:', error);
       res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' });
     }
   });

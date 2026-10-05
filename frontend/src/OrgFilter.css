@@ -919,16 +919,13 @@
 .text-muted { color: var(--sv-text-muted); }
 .text-danger { color: var(--sv-danger); }
 
-/* ----------------- RESPONSIVE BREAKPOINTS ----------------- */
 
-/* หน้าจอขนาดกลาง-ใหญ่ (Tablet แนวนอน / Laptop เล็ก) */
 @media (max-width: 1400px) {
   .sv-kpi-grid { grid-template-columns: repeat(4, 1fr); }
   .sv-row-analytics { grid-template-columns: repeat(2, 1fr); }
   .sv-row-details, .sv-row-risks { grid-template-columns: 1fr; }
 }
 
-/* หน้าจอ Tablet ทั่วไป */
 @media (max-width: 992px) {
   .sv-dashboard-container { padding: 20px; gap: 18px; }
   .sv-header { flex-direction: column; align-items: stretch; gap: 14px; }
@@ -938,33 +935,202 @@
   .sv-mini-risk-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* หน้าจอ Mobile ทั่วไป (กว้างไม่เกิน 640px) */
 @media (max-width: 640px) {
-  .sv-dashboard-container { padding: 14px; gap: 14px; }
-  
-  .sv-header-left { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .sv-header-right { flex-direction: column; align-items: stretch; }
-  .sv-filter-btn { width: 100%; justify-content: space-between; }
-  
+  .sv-dashboard-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    gap: 14px;
+    overflow-x: hidden;
+  }
+
+  .sv-row-analytics,
+  .sv-row-details,
+  .sv-row-risks,
+  .sv-kpi-grid,
+  .sv-card,
+  .sv-row-analytics > *,
+  .sv-row-details > *,
+  .sv-row-risks > *,
+  .sv-kpi-grid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sv-header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .sv-header-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sv-filter-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .sv-user-profile {
+    width: 100%;
     margin-left: 0;
     padding-top: 10px;
     border-top: 1px solid var(--sv-border);
-    justify-content: space-between;
+    box-sizing: border-box;
   }
-  
-  .sv-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  
-  .sv-card { padding: 16px; }
-  .sv-card-header { flex-direction: column; align-items: flex-start; }
-  .sv-search-input { width: 100%; }
 
-  .sv-mandatory-box { flex-direction: column; gap: 16px; }
-  .sv-donut-legend { padding-left: 0; width: 100%; }
+  .sv-user-info-text {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .sv-user-fullname,
+  .sv-user-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sv-logout-btn {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .sv-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sv-card {
+    padding: 16px;
+  }
+
+  .sv-card-header {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sv-search-input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sv-table-scroll-container {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+  }
+
+  .sv-mandatory-box {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sv-donut-legend {
+    width: 100%;
+    padding-left: 0;
+  }
+
+  .sv-trend-chart-area {
+    padding: 0;
+    gap: 4px;
+  }
+
+  .sv-compare-chart-area {
+    gap: 8px;
+  }
+
+  .sv-bar-group {
+    gap: 5px;
+  }
+
+  .sv-compare-label {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .sv-pending-item,
+  .sv-fail-course-item,
+  .sv-roadmap-header,
+  .sv-activity-item {
+    gap: 10px;
+  }
 }
 
-/* หน้าจอ Mobile ขนาดเล็กพิเศษ (กว้างไม่เกิน 420px) */
 @media (max-width: 420px) {
-  .sv-kpi-grid { grid-template-columns: 1fr; }
-  .sv-mini-risk-grid { grid-template-columns: 1fr; }
+  .sv-dashboard-container {
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .sv-header-title {
+    font-size: 20px;
+  }
+
+  .sv-header-subtitle {
+    font-size: 13px;
+  }
+
+  .sv-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-mini-risk-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-card {
+    padding: 14px;
+  }
+
+  .sv-user-profile {
+    flex-wrap: wrap;
+  }
+
+  .sv-logout-btn {
+    width: 100%;
+    margin: 4px 0 0;
+  }
+
+  .sv-trend-bar {
+    width: 14px;
+  }
+
+  .sv-trend-bar-val,
+  .sv-trend-bar-label {
+    font-size: 11px;
+  }
+
+  .sv-compare-chart-area {
+    gap: 4px;
+  }
+
+  .sv-bar-group {
+    gap: 3px;
+  }
+
+  .sv-bar-val {
+    width: 20px;
+  }
+
+  .sv-compare-label {
+    font-size: 11px;
+  }
+
+  .sv-compare-legends {
+    gap: 10px;
+  }
+
+  .sv-urgent-row,
+  .sv-pending-item,
+  .sv-fail-course-item,
+  .sv-roadmap-header,
+  .sv-activity-item {
+    flex-wrap: wrap;
+  }
 }

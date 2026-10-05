@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
+
+// ใช้ Relative Path เพื่อให้วิ่งผ่าน Vite Proxy และ Cloudflare Tunnel ได้ทั้งบนคอมและมือถือ
+const API_BASE = "";
 
 function Dashboard() {
   const [user] = useState(() => {
@@ -12,51 +15,110 @@ function Dashboard() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
+  // ตรวจเกณฑ์การผ่าน (คะแนน >= 80% หรือสถานะ PASS/COMPLETED โดยไม่สอบตก)
+  const isCoursePassed = (item) => {
+    if (!item) return false;
+    const statusStr = String(item.status || "").trim().toLowerCase();
+    if (["failed", "fail"].includes(statusStr) || item.is_passed === false || item.is_passed === 0) {
+      return false;
+    }
+    const score = Number(item.score ?? item.exam_score ?? 0);
+    const hasPassStatus = ["completed", "pass"].includes(statusStr);
+    return score >= 80 && (hasPassStatus || item.is_passed === true || item.is_passed === 1);
+  };
+
   useEffect(() => {
-    if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนใช้งาน!");
-      navigate("/login");
+    const token = localStorage.getItem("token");
+
+    if (!user?.id || !token) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
       return;
     }
 
-    fetch(`http://localhost:5000/api/user-dashboard/${user.id}`)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success) {
-          setCourses(res.data);
+
+    const controller = new AbortController();
+
+    const fetchDashboard = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/api/user-dashboard/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            signal: controller.signal,
+          }
+        );
+
+        if (response.status === 401) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          navigate("/login", { replace: true });
+          return;
         }
-      })
-      .catch((err) => console.error("Fetch dashboard error:", err))
-      .finally(() => setLoading(false));
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "โหลดข้อมูลไม่สำเร็จ");
+        }
+
+        if (!Array.isArray(result.data)) {
+          throw new Error("รูปแบบข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง");
+        }
+
+        if (!controller.signal.aborted) {
+          setCourses(result.data);
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Fetch dashboard error:", err);
+          setError(err.message || "ไม่สามารถโหลดข้อมูลได้");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDashboard();
+
+    return () => {
+      controller.abort();
+    };
   }, [user, navigate]);
 
   const handleLogout = () => {
     if (window.confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
       localStorage.removeItem("user");
-      navigate("/login");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
     }
   };
 
   const handleOpenModal = (course) => {
     const score = Number(course.score ?? course.exam_score ?? 0);
-    if (score < 80) {
-      alert(`ไม่สามารถดูใบประกาศนียบัตรได้ เนื่องจากคะแนนสอบของคุณ (${score}%) ไม่ถึงเกณฑ์ขั้นต่ำ 80%`);
+    if (!isCoursePassed(course)) {
+      alert(`ไม่สามารถดูใบประกาศนียบัตรได้ เนื่องจากคะแนนสอบของคุณ (${score}%) ไม่ถึงเกณฑ์ขั้นต่ำ 80% หรือยังไม่ผ่านการประเมิน`);
       return;
     }
     setSelectedCourse(course);
     setShowModal(true);
   };
 
-  // ตรวจเช็กเงื่อนไข >= 80% ก่อนเปิดหน้าใบ Certificate
   const handleViewPDF = () => {
-    if (!selectedCourse) return;
-
-    const score = Number(selectedCourse.score ?? selectedCourse.exam_score ?? 0);
-    if (score < 80) {
-      alert(`ไม่สามารถเปิดดูใบประกาศนียบัตรได้ เนื่องจากคะแนนสอบของคุณ (${score}%) ไม่ถึงเกณฑ์ขั้นต่ำ 80%`);
+    if (!selectedCourse || !isCoursePassed(selectedCourse)) {
+      alert("ไม่สามารถเปิดดูใบประกาศนียบัตรได้");
       return;
     }
 
@@ -68,71 +130,85 @@ function Dashboard() {
       issued_at: selectedCourse.issued_at
     };
     localStorage.setItem("user", JSON.stringify(updatedUser));
-    navigate("/certificate");
+    navigate(`/certificate/${selectedCourse.cert_uuid}`);
   };
+
+  // รวมหลักสูตรไม่ให้ซ้ำกัน
+  const uniqueCourses = useMemo(() => {
+    return Array.from(
+      new Map((courses || []).map(item => [item.course_id || item.course_title, item])).values()
+    );
+  }, [courses]);
+
+  // คำนวณสรุปผลผ่าน/ตก
+  const { passedList, failedList, overallProgress } = useMemo(() => {
+    const passed = uniqueCourses.filter(isCoursePassed);
+    const failed = uniqueCourses.filter((c) => !isCoursePassed(c));
+    const total = uniqueCourses.length;
+    const progress = total > 0 ? Math.round((passed.length / total) * 100) : 0;
+
+    return {
+      passedList: passed,
+      failedList: failed,
+      overallProgress: progress,
+    };
+  }, [uniqueCourses]);
+
+  // คำนวณแผนการเรียนตามหมวดหมู่
+  const categoryPlans = useMemo(() => {
+    const categoryConfigs = [
+      { 
+        title: 'Mandatory Training', 
+        keywords: ['gmp', 'safety', 'ความปลอดภัย', 'กฎระเบียบ', 'สิ่งแวดล้อม'],
+        defaultTotal: 2
+      },
+      { 
+        title: 'Technical Skill', 
+        keywords: ['machine', 'setup', 'เครื่องจักร', 'pm', 'ซ่อมบำรุง', 'เทคนิค'],
+        defaultTotal: 2
+      },
+      { 
+        title: 'Soft Skill', 
+        keywords: ['kaizen', '5s', 'สื่อสาร', 'หัวหน้างาน', 'จิตวิทยา'],
+        defaultTotal: 1
+      },
+      { 
+        title: 'Work Instruction', 
+        keywords: ['wi', 'sop', 'ประกอบ', 'บรรจุ', 'ขั้นตอน'],
+        defaultTotal: 2
+      }
+    ];
+
+    return categoryConfigs.map((cfg) => {
+      const matchedCourses = uniqueCourses.filter((c) => {
+        const title = (c.course_title || '').toLowerCase();
+        return cfg.keywords.some((kw) => title.includes(kw));
+      });
+
+      const passedCount = matchedCourses.filter(isCoursePassed).length;
+      const totalCount = matchedCourses.length > 0 ? matchedCourses.length : cfg.defaultTotal;
+      const percent = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
+
+      return {
+        title: cfg.title,
+        passed: passedCount,
+        total: totalCount,
+        percent: percent
+      };
+    });
+  }, [uniqueCourses]);
 
   if (!user || loading) {
     return <div className="loading">กำลังโหลดข้อมูลระบบ...</div>;
   }
 
-  // คำนวณสถานะผ่านเกณฑ์โดยอิงคะแนน >= 80%
-  const passedList = courses.filter((c) => Number(c.score) >= 80 || c.is_passed);
-  const failedList = courses.filter((c) => Number(c.score) < 80 && !c.is_passed);
-
-  const totalCourses = courses.length;
-  const passedCourses = passedList.length;
-  const overallProgress = totalCourses > 0 ? Math.round((passedCourses / totalCourses) * 100) : 0;
-
-  const categoryConfigs = [
-    { 
-      title: 'Mandatory Training', 
-      keywords: ['gmp', 'safety', 'ความปลอดภัย', 'กฎระเบียบ', 'สิ่งแวดล้อม'],
-      defaultTotal: 2
-    },
-    { 
-      title: 'Technical Skill', 
-      keywords: ['machine', 'setup', 'เครื่องจักร', 'pm', 'ซ่อมบำรุง', 'เทคนิค'],
-      defaultTotal: 2
-    },
-    { 
-      title: 'Soft Skill', 
-      keywords: ['kaizen', '5s', 'สื่อสาร', 'หัวหน้างาน', 'จิตวิทยา'],
-      defaultTotal: 1
-    },
-    { 
-      title: 'Work Instruction', 
-      keywords: ['wi', 'sop', 'ประกอบ', 'บรรจุ', 'ขั้นตอน'],
-      defaultTotal: 2
-    }
-  ];
-
-  const categoryPlans = categoryConfigs.map((cfg) => {
-    const matchedCourses = courses.filter((c) => {
-      const title = (c.course_title || '').toLowerCase();
-      return cfg.keywords.some((kw) => title.includes(kw));
-    });
-
-    const passedCount = matchedCourses.filter(
-      (c) => Number(c.score) >= 80 || c.is_passed || String(c.status).toLowerCase() === 'completed' || String(c.status).toUpperCase() === 'PASS'
-    ).length;
-
-    const totalCount = matchedCourses.length > 0 ? matchedCourses.length : cfg.defaultTotal;
-    const percent = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
-
-    return {
-      title: cfg.title,
-      passed: passedCount,
-      total: totalCount,
-      percent: percent
-    };
-  });
-
-  const uniqueCourses = Array.from(
-    new Map((courses || []).map(item => [item.course_id || item.course_title, item])).values()
-  );
-
   return (
     <div className="dashboard-wrapper">
+      {error && (
+        <p role="alert" style={{ color: "red" }}>
+          {error}
+        </p>
+      )}
       <header className="dash-header">
         <div>
           <span className="welcome-text">Welcome back,</span>
@@ -247,7 +323,7 @@ function Dashboard() {
             <div className="progress-legend">
               {uniqueCourses.slice(0, 4).map((c, idx) => {
                 const score = Number(c.score || 0);
-                const isPass = score >= 80 || c.is_passed;
+                const isPass = isCoursePassed(c);
                 return (
                   <p key={c.exam_id || c.course_id || idx}>
                     <span>
@@ -323,7 +399,7 @@ function Dashboard() {
           <div className="course-scroll-container">
             {uniqueCourses.map((item) => {
               const score = Number(item.score || 0);
-              const isPass = score >= 80 || item.is_passed;
+              const isPass = isCoursePassed(item);
 
               return (
                 <div className="course-action-item" key={item.exam_id || item.course_id}>
@@ -376,7 +452,7 @@ function Dashboard() {
           <div className="assessment-scroll-container">
             {uniqueCourses.map((item) => {
               const score = Number(item.score || 0);
-              const isPass = score >= 80 || item.is_passed;
+              const isPass = isCoursePassed(item);
 
               return (
                 <div className="assessment-item" key={item.exam_id || item.course_id}>
@@ -428,7 +504,7 @@ function Dashboard() {
           <div className="history-scroll-container">
             {uniqueCourses.map((item, idx) => {
               const score = Number(item.score || 0);
-              const isComplete = score >= 80 || item.is_passed;
+              const isComplete = isCoursePassed(item);
               return (
                 <div className="history-row" key={item.exam_id || item.course_id || idx}>
                   <span>

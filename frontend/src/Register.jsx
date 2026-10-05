@@ -1,125 +1,151 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import './Register.css'
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import "./Register.css";
 
 function Register() {
   const navigate = useNavigate();
+
   const [lines, setLines] = useState([]);
   const [sections, setSections] = useState([]);
   const [teams, setTeams] = useState([]);
-  const [selectedSectionId, setSelectedSectionId] = useState('');
+  const [selectedSectionId, setSelectedSectionId] = useState("");
 
   const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: '',
-    first_name: '',
-    last_name: '',
-    employee_code: '',
-    position: 'Operator A',
-    line_id: '',
-    team_id: ''
+    password: "",
+    confirmPassword: "",
+    first_name: "",
+    last_name: "",
+    employee_code: "",
+    position: "Operator A",
+    line_id: "",
+    team_id: "",
   });
 
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
+  // 1. โหลดข้อมูลสายการผลิต (Lines)
   useEffect(() => {
-    fetch('http://localhost:5000/api/lines')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/lines")
+      .then((res) => res.json())
+      .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setLines(data);
-          setFormData(prev => ({ ...prev, line_id: data[0].id }));
+          setFormData((prev) => ({ ...prev, line_id: data[0].id }));
         }
       })
-      .catch(err => console.error("Fetch Lines Error:", err));
+      .catch((err) => {
+        console.error("Fetch Lines Error:", err);
+        setError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อดึงข้อมูลสายการผลิตได้");
+      });
   }, []);
 
+  // 2. โหลดข้อมูลแผนก (Sections) ตาม Line ที่เลือก
   useEffect(() => {
     if (!formData.line_id) return;
 
-    fetch(`http://localhost:5000/api/sections?line_id=${formData.line_id}`)
-      .then(res => res.json())
-      .then(data => {
+    fetch(`/api/sections?line_id=${formData.line_id}`)
+      .then((res) => res.json())
+      .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setSections(data);
-          setSelectedSectionId(data[0].id); 
+          setSelectedSectionId(data[0].id);
         } else {
           setSections([]);
-          setSelectedSectionId('');
+          setSelectedSectionId("");
           setTeams([]);
-          setFormData(prev => ({ ...prev, team_id: '' }));
+          setFormData((prev) => ({ ...prev, team_id: "" }));
         }
       })
-      .catch(err => console.error("Fetch Sections Error:", err));
+      .catch((err) => console.error("Fetch Sections Error:", err));
   }, [formData.line_id]);
 
+  // 3. โหลดข้อมูลทีม (Teams) ตาม Section ที่เลือก
   useEffect(() => {
     if (!selectedSectionId) return;
 
-    fetch(`http://localhost:5000/api/teams?section_id=${selectedSectionId}`)
-      .then(res => res.json())
-      .then(data => {
+    fetch(`/api/teams?section_id=${selectedSectionId}`)
+      .then((res) => res.json())
+      .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setTeams(data);
-          setFormData(prev => ({ ...prev, team_id: data[0].id })); // ตั้งค่า team_id เริ่มต้น
+          setFormData((prev) => ({ ...prev, team_id: data[0].id }));
         } else {
           setTeams([]);
-          setFormData(prev => ({ ...prev, team_id: '' }));
+          setFormData((prev) => ({ ...prev, team_id: "" }));
         }
       })
-      .catch(err => console.error("Fetch Teams Error:", err));
+      .catch((err) => console.error("Fetch Teams Error:", err));
   }, [selectedSectionId]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
+
+    if (loading) return;
+
+    setError("");
+
+    // ตรวจสอบความครบถ้วนของข้อมูล
+    if (
+      !formData.first_name.trim() ||
+      !formData.last_name.trim() ||
+      !formData.employee_code.trim() ||
+      !formData.password
+    ) {
+      setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
-      setErrorMsg('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+      setError("รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน");
       return;
     }
 
     if (!formData.line_id || !formData.team_id) {
-      setErrorMsg('กรุณาเลือก สายการผลิต (Line) และ ทีม (Team) ให้ถูกต้อง');
+      setError("กรุณาเลือก สายการผลิต (Line) และ ทีม (Team) ให้ครบถ้วน");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           password: formData.password,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          employee_code: formData.employee_code,
+          first_name: formData.first_name.trim(),
+          last_name: formData.last_name.trim(),
+          employee_code: formData.employee_code.trim(),
           position: formData.position,
           line_id: Number(formData.line_id),
-          team_id: Number(formData.team_id)
+          team_id: Number(formData.team_id),
         }),
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
-      if (result.success) {
-        alert('ลงทะเบียนพนักงานสำเร็จ!');
-        navigate('/login');
-      } else {
-        setErrorMsg(result.message || 'เกิดข้อผิดพลาดในการลงทะเบียน');
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "การลงทะเบียนล้มเหลว");
       }
+
+      alert("ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ");
+      navigate("/login", { replace: true });
     } catch (err) {
-      console.error("เกิดข้อผิดพลาดในการเชื่อมต่อ:", err);
-      setErrorMsg('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      setError(
+        err instanceof TypeError
+          ? "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่"
+          : err.message || "การลงทะเบียนล้มเหลว"
+      );
     } finally {
       setLoading(false);
     }
@@ -130,7 +156,8 @@ function Register() {
       <div className="regis-card">
         <h2>ลงทะเบียนพนักงานใหม่</h2>
 
-        {errorMsg && <div className="error-banner">{errorMsg}</div>}
+        {/* แก้ไขเป็นตัวแปร error ให้ตรงกับ state */}
+        {error && <div className="error-banner">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -145,8 +172,8 @@ function Register() {
             />
           </div>
 
-          <div className="form-row" style={{ display: 'flex', gap: '10px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
+          <div className="form-row form-row-2">
+            <div className="form-group">
               <label>ชื่อจริง</label>
               <input
                 type="text"
@@ -157,7 +184,7 @@ function Register() {
                 required
               />
             </div>
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group">
               <label>นามสกุล</label>
               <input
                 type="text"
@@ -170,37 +197,43 @@ function Register() {
             </div>
           </div>
 
-          <div className="form-row" style={{ display: 'flex', gap: '10px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
+          <div className="form-row form-row-3">
+            <div className="form-group">
               <label>สายการผลิต (Line)</label>
               <select name="line_id" value={formData.line_id} onChange={handleChange} required>
-                {lines.map(line => (
-                  <option key={line.id} value={line.id}>{line.name}</option>
+                {lines.map((line) => (
+                  <option key={line.id} value={line.id}>
+                    {line.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             {sections.length > 0 && (
-              <div className="form-group" style={{ flex: 1 }}>
+              <div className="form-group">
                 <label>แผนก (Section)</label>
-                <select 
-                  value={selectedSectionId} 
-                  onChange={(e) => setSelectedSectionId(e.target.value)} 
+                <select
+                  value={selectedSectionId}
+                  onChange={(e) => setSelectedSectionId(e.target.value)}
                   required
                 >
-                  {sections.map(sec => (
-                    <option key={sec.id} value={sec.id}>{sec.name}</option>
+                  {sections.map((sec) => (
+                    <option key={sec.id} value={sec.id}>
+                      {sec.name}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
 
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group">
               <label>ทีม (Team)</label>
               <select name="team_id" value={formData.team_id} onChange={handleChange} required>
                 {teams.length > 0 ? (
-                  teams.map(team => (
-                    <option key={team.id} value={team.id}>{team.name}</option>
+                  teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
                   ))
                 ) : (
                   <option value="">-- ไม่พบทีม --</option>
@@ -243,7 +276,7 @@ function Register() {
           </div>
 
           <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? 'กำลังบันทึกข้อมูล...' : 'สมัครสมาชิก'}
+            {loading ? "กำลังบันทึกข้อมูล..." : "สมัครสมาชิก"}
           </button>
         </form>
 

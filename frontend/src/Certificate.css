@@ -1,113 +1,137 @@
+/* ==========================================================================
+   1. GLOBAL CONTAINER & ACTION BAR
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
 .cert-page-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30px;
+  padding: 30px 20px;
   background-color: #f0f2f5;
   min-height: 100vh;
   box-sizing: border-box;
   width: 100%;
-  overflow-x: auto; 
 }
 
 .action-bar {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   width: 100%;
   display: flex;
   justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .download-cert-btn {
   width: 280px;
   height: 45px;
-  font-size: 16px;
-  background-color: #007bff;
+  font-size: 15px;
+  background-color: #2563eb;
   border: none;
-  border-radius: 20px;
+  border-radius: 9999px;
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
-  transition: all .25s ease;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .download-cert-btn:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #1d4ed8;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
 }
 
 .download-cert-btn:disabled {
-  background-color: #cccccc;
+  background-color: #cbd5e1;
+  color: #64748b;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-
+/* ==========================================================================
+   2. CERTIFICATE LAYOUT (ล็อกขนาดมาตรฐาน 1122 x 793 px = A4 แนวนอน)
+   ========================================================================== */
 .cert-wrapper {
+  width: 1122px;
+  height: 793px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  background-color: white;
+  background-color: #ffffff;
   border-radius: 4px;
-  flex-shrink: 0; 
+  flex-shrink: 0;
+  margin: 0 auto;
 }
 
 .certificate-body {
-  width: 297mm;   
-  height: 210mm;  
-  padding: 20mm;
+  width: 1122px;
+  height: 793px;
+  padding: 30px 40px; /* เว้นขอบขาวรอบนอกกรอบทอง */
   box-sizing: border-box;
-  background-color: #fffdf6; 
+  background-color: #fffdf6;
   position: relative;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   flex-direction: column;
 }
 
+/* กรอบสีทองชั้นนอก */
 .cert-border {
-  border: 6px solid #d4af37; 
+  border: 5px solid #d4af37;
   height: 100%;
-  padding: 5px;
+  width: 100%;
+  padding: 6px;
   box-sizing: border-box;
   display: flex;
-  flex: 1;
+  flex-direction: column;
 }
 
+/* กรอบสีทองชั้นใน */
 .cert-inner-border {
   border: 2px solid #d4af37;
   height: 100%;
   width: 100%;
-  padding: 20px;
+  padding: 36px 45px 24px 45px;
   box-sizing: border-box;
   text-align: center;
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* ดันหัวเรื่องไปบนสุด และลายเซ็น/QR ลงล่างสุดเต็มแผ่น */
   align-items: center;
-  justify-content: center;
 }
 
 .cert-logo {
-  font-size: 50px;
-  margin-bottom: 10px;
+  font-size: 45px;
+  margin-bottom: 8px;
 }
 
 .cert-title {
   font-size: 42px;
-  color: #1a237e; 
-  margin: 0 0 10px 0;
+  color: #1a237e;
+  margin: 0 0 6px 0;
   letter-spacing: 2px;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .cert-subtitle {
   font-size: 16px;
-  color: #555;
-  margin: 5px 0;
+  color: #555555;
+  margin: 4px 0;
   font-style: italic;
 }
 
 .cert-name {
   font-size: 32px;
-  color: #222;
-  margin: 15px 0 5px 0;
+  color: #1e293b;
+  margin: 10px 0 4px 0;
   text-decoration: underline;
   text-underline-offset: 8px;
   text-decoration-color: #d4af37;
@@ -116,38 +140,38 @@
 
 .cert-details {
   font-size: 14px;
-  color: #666;
-  margin: 0 0 15px 0;
+  color: #64748b;
+  margin: 0 0 8px 0;
 }
 
 .cert-divider {
-  width: 150px;
+  width: 140px;
   height: 1px;
   background-color: #d4af37;
-  margin: 15px 0;
+  margin: 10px 0;
 }
 
 .cert-course {
-  font-size: 24px;
+  font-size: 22px;
   color: #0d47a1;
-  margin: 10px 0 20px 0;
+  margin: 8px 0 12px 0;
   font-weight: 600;
 }
 
 .cert-date {
-  font-size: 14px;
-  color: #777;
-  margin-bottom: 40px;
+  font-size: 13.5px;
+  color: #64748b;
+  margin-bottom: 0;
 }
 
-
+/* ส่วนท้ายใบเซอร์ (ลายเซ็น & QR Code) */
 .cert-footer-zone {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; 
+  align-items: flex-end;
   width: 100%;
-  margin-top: auto;      
-  padding: 0 40px;       
+  margin-top: auto;
+  padding: 0 10px;
   box-sizing: border-box;
 }
 
@@ -165,108 +189,394 @@
 }
 
 .sign-line {
-  border-bottom: 1px solid #777;
+  border-bottom: 1px solid #777777;
   margin-bottom: 5px;
-  height: 30px; 
+  height: 28px;
 }
 
 .signature-block p {
   font-size: 12px;
-  color: #555;
+  color: #555555;
   margin: 0;
 }
 
-.signature-block h1 {
-  position: absolute;
-  font-size: 16px;
-  color: #555;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+.signature-block h3 {
   margin: 0;
-  font-weight: 500;
+  font-size: 15px;
+  color: #475569;
 }
 
 .cert-qrcode-block {
   display: flex;
-  flex-direction: column;  
-  align-items: center;     
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   text-align: center;
 }
 
 .cert-qrcode-block img {
-  border: 2px solid #d4af37;  
-  padding: 3px;              
-  background-color: #ffffff;  
-  border-radius: 4px;       
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); 
+  border: 1.5px solid #d4af37;
+  padding: 3px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  width: 78px;
+  height: 78px;
+  display: block;
 }
 
 .qrcode-text {
-  font-size: 13px;
-  color: #1a237e;            
+  font-size: 11px;
+  color: #1a237e;
   font-weight: 600;
-  margin: 8px 0 2px 0;       
+  margin: 5px 0 2px 0;
 }
 
 .cert-id-text {
-  font-size: 12px;
-  color: #999999;
-  font-family: monospace;   
+  font-size: 10px;
+  color: #94a3b8;
+  font-family: monospace;
   margin: 0;
 }
 
+/* ==========================================================================
+   RESPONSIVE CERTIFICATE PREVIEW
+   คงสัดส่วนแนวนอน 1122 × 793 และปรับขนาดตามพื้นที่แสดงผล
+   ========================================================================== */
 
-@media (max-width: 1180px) {
+@media screen and (max-width: 1180px) {
   .cert-page-container {
-    padding: 20px 10px;
-    align-items: center;
-    overflow-x: hidden; 
-  }
+    --cert-gutter: 24px;
 
-  .cert-wrapper {
-    transform: scale(calc((100vw - 32px) / 1122));
-    transform-origin: top center; 
-    margin-bottom: calc((210mm * (1 - ((100vw - 32px) / 1122))) * -1); 
-  }
-}
-
-@media (max-width: 768px) {
-  .cert-page-container {
-    padding: 16px 8px;
-  }
-
-  .action-bar {
-    margin-bottom: 12px;
-  }
-
-  .download-cert-btn {
     width: 100%;
-    max-width: 320px;
-    font-size: 14px;
-    height: 40px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 20px 12px;
+    align-items: center;
+    box-sizing: border-box;
   }
 
-  .cert-wrapper {
-    transform: scale(calc((100vw - 32px) / 1122));
-    transform-origin: top center;
-    margin-bottom: calc((210mm * (1 - ((100vw - 32px) / 1122))) * -1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  .cert-page-container .cert-wrapper {
+    container-type: inline-size;
+
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 1122px;
+    min-width: 0;
+
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: auto;
+
+    margin: 0 auto;
+    padding: 0;
+    flex-shrink: 0;
+    transform: none;
+
+    background: #fffdf6;
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  .cert-wrapper > #certificate-view.certificate-body {
+    /* ค่าสำรองสำหรับเบราว์เซอร์ที่ยังไม่รองรับ cqw */
+    --cert-unit: min(
+      1px,
+      calc((100vw - var(--cert-gutter)) / 1122)
+    );
+
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+
+    height: calc(var(--cert-unit) * 793);
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: auto;
+
+    margin: 0;
+    padding:
+      calc(var(--cert-unit) * 30)
+      calc(var(--cert-unit) * 40);
+
+    display: flex;
+    flex-direction: column;
+    flex: none;
+
+    transform: none;
+    box-shadow: none;
+    box-sizing: border-box;
+    background: #fffdf6;
+
+    font-size: calc(var(--cert-unit) * 16);
+    line-height: 1.4;
+
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* ใช้ความกว้างของกรอบจริง เมื่อเบราว์เซอร์รองรับ */
+  @supports (width: 1cqw) {
+    .cert-wrapper > #certificate-view.certificate-body {
+      --cert-unit: calc(100cqw / 1122);
+    }
+  }
+
+  .cert-wrapper #certificate-view,
+  .cert-wrapper #certificate-view * {
+    box-sizing: border-box;
+  }
+
+  .cert-wrapper #certificate-view .cert-border {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+
+    border: calc(var(--cert-unit) * 5) solid #d4af37;
+    padding: calc(var(--cert-unit) * 6);
+  }
+
+  .cert-wrapper #certificate-view .cert-inner-border {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    gap: 0;
+
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+
+    border: calc(var(--cert-unit) * 2) solid #d4af37;
+    padding:
+      calc(var(--cert-unit) * 36)
+      calc(var(--cert-unit) * 45)
+      calc(var(--cert-unit) * 24);
+
+    text-align: center;
+  }
+
+  .cert-wrapper #certificate-view .cert-inner-border > * {
+    min-width: 0;
+    max-width: 100%;
+    flex-shrink: 0;
+  }
+
+  .cert-wrapper #certificate-view .cert-title {
+    font-size: calc(var(--cert-unit) * 42);
+    line-height: 1.2;
+    letter-spacing: calc(var(--cert-unit) * 2);
+    margin: 0 0 calc(var(--cert-unit) * 6);
+  }
+
+  .cert-wrapper #certificate-view .cert-subtitle {
+    font-size: calc(var(--cert-unit) * 16);
+    line-height: 1.4;
+    margin: calc(var(--cert-unit) * 4) 0;
+  }
+
+  .cert-wrapper #certificate-view .cert-name {
+    font-size: calc(var(--cert-unit) * 32);
+    line-height: 1.4;
+    margin:
+      calc(var(--cert-unit) * 10)
+      0
+      calc(var(--cert-unit) * 4);
+
+    text-underline-offset: calc(var(--cert-unit) * 8);
+    overflow-wrap: break-word;
+  }
+
+  .cert-wrapper #certificate-view .cert-details {
+    font-size: calc(var(--cert-unit) * 14);
+    line-height: 1.4;
+    margin: 0 0 calc(var(--cert-unit) * 8);
+  }
+
+  .cert-wrapper #certificate-view .cert-divider {
+    width: calc(var(--cert-unit) * 140);
+    height: 1px;
+    margin: calc(var(--cert-unit) * 10) 0;
+  }
+
+  .cert-wrapper #certificate-view .cert-course {
+    font-size: calc(var(--cert-unit) * 22);
+    line-height: 1.4;
+    margin:
+      calc(var(--cert-unit) * 8)
+      0
+      calc(var(--cert-unit) * 12);
+
+    overflow-wrap: break-word;
+  }
+
+  .cert-wrapper #certificate-view .cert-date {
+    font-size: calc(var(--cert-unit) * 13.5);
+    line-height: 1.4;
+    margin: calc(var(--cert-unit) * 13.5) 0 0;
+  }
+
+  /* ใช้ !important เพื่อแทนค่า inline style ใน JSX */
+  .cert-wrapper #certificate-view .cert-uuid-text {
+    font-size: calc(var(--cert-unit) * 12) !important;
+    letter-spacing: calc(var(--cert-unit) * 0.5) !important;
+    margin: calc(var(--cert-unit) * 2) 0 0 !important;
+
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+
+  .cert-wrapper #certificate-view .cert-footer-zone {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+
+    width: 100%;
+    margin-top: auto;
+    padding: 0 calc(var(--cert-unit) * 10);
+  }
+
+  .cert-wrapper #certificate-view .cert-signatures {
+    display: flex;
+    justify-content: flex-start;
+    width: 50%;
+    min-width: 0;
+    gap: calc(var(--cert-unit) * 20);
+  }
+
+  .cert-wrapper #certificate-view .signature-block {
+    width: calc(var(--cert-unit) * 200);
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .cert-wrapper #certificate-view .signature-block h3 {
+    font-size: calc(var(--cert-unit) * 15);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .cert-wrapper #certificate-view .sign-line {
+    height: calc(var(--cert-unit) * 28);
+    margin-bottom: calc(var(--cert-unit) * 5);
+    border-bottom: 1px solid #777;
+  }
+
+  .cert-wrapper #certificate-view .signature-block p {
+    font-size: calc(var(--cert-unit) * 12);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .cert-wrapper #certificate-view .cert-qrcode-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    max-width: 50%;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .cert-wrapper #certificate-view .cert-qrcode-block img {
+    width: calc(var(--cert-unit) * 85) !important;
+    height: calc(var(--cert-unit) * 85) !important;
+
+    display: block;
+    flex-shrink: 0;
+    padding: calc(var(--cert-unit) * 3);
+    border: 1px solid #d4af37;
+    border-radius: calc(var(--cert-unit) * 4);
+    background: #fff;
+  }
+
+  .cert-wrapper #certificate-view .qrcode-text {
+    font-size: calc(var(--cert-unit) * 11);
+    line-height: 1.4;
+    margin:
+      calc(var(--cert-unit) * 5)
+      0
+      calc(var(--cert-unit) * 2);
+  }
+
+  .cert-wrapper #certificate-view .cert-id-text {
+    font-size: calc(var(--cert-unit) * 10);
+    line-height: 1.4;
+    margin: 0;
   }
 }
 
+/* ==========================================================================
+   MOBILE: ใบประกาศเกือบเต็มความกว้างจอ ปุ่มยังมีขนาดกดสะดวก
+   ========================================================================== */
 
+@media screen and (max-width: 768px) {
+  .cert-page-container {
+    --cert-gutter: 8px;
+    padding: 16px 4px;
+  }
+
+  .cert-page-container .action-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    width: 100%;
+    padding: 0 8px;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box;
+  }
+
+  .cert-page-container .download-cert-btn {
+    width: 100%;
+    max-width: 340px;
+    min-height: 44px;
+    height: auto;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+/* ==========================================================================
+   4. PRINT CONFIGURATION (เต็มหน้า A4 Landscape 100%)
+   ========================================================================== */
 @media print {
   @page {
-    size: A4 landscape;
+    size: 297mm 210mm;
     margin: 0;
+  }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body, html, .cert-page-container {
-    padding: 0;
-    margin: 0;
-    background: transparent;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    overflow: hidden !important;
   }
 
   .action-bar {
@@ -274,13 +584,17 @@
   }
 
   .cert-wrapper {
-    transform: none !important; 
-    margin-bottom: 0 !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    transform: none !important;
+    margin: 0 !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
   }
 
   .certificate-body {
     width: 297mm !important;
     height: 210mm !important;
+    padding: 10mm 14mm !important;
   }
 }

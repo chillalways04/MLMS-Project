@@ -255,9 +255,16 @@ function OrgFilter() {
 
     return Array.from(map.values()).map((emp) => {
       const total = emp.courses.length;
-      const passed = emp.courses.filter(
-        (c) => String(c.status).toLowerCase() === 'completed' || String(c.status).toUpperCase() === 'PASS'
-      ).length;
+     const passed = emp.courses.filter((c) => {
+      const score = Number(c.score);
+      const status = String(c.status ?? '').trim().toLowerCase();
+
+      return (
+        Number.isFinite(score) &&
+        score >= 80 &&
+        ['completed', 'pass'].includes(status)
+      );
+    }).length;
 
       const progress = total > 0 ? Math.round((passed / total) * 100) : 0;
 
@@ -424,7 +431,8 @@ function OrgFilter() {
             <span className="sv-kpi-value">{new Set(rawMembers.map(m => m.course_title).filter(Boolean)).size}</span>
             <span className="sv-kpi-unit">วิชา</span>
           </div>
-          <div className="sv-kpi-sub">ทั้งหมด {rawMembers.length} รายการ</div>
+          <div className="sv-kpi-sub">
+            ทั้งหมด {rawMembers.filter(m => m.course_title).length} รายการ</div>
         </div>
 
         <div className="sv-kpi-card">

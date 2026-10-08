@@ -478,235 +478,440 @@ app.get('/api/certificates/:uuid', authenticateToken, (req, res) => {
 });
 
 // Dashboard พนักงาน: ใช้ ON CONFLICT DO NOTHING ป้องกันใบเซอร์ซ้ำ
-app.get('/api/user-dashboard/:userId', authenticateToken, requireOwnUserId, (req, res) => {
-  const userId = req.user.id;
+app.get('/api/user-dashboard/:userId',authenticateToken,requireOwnUserId,(req, res) => {
+    const userId = req.user.id;
 
-  const sql = `
-    SELECT 
-      es.id AS exam_score_id,
-      es.score,
-      es.status,
-      es.tested_at,
-      cr.id AS course_id,
-      cr.title AS course_title,
-      c.uuid AS cert_uuid,
-      c.verification_code,
-      c.issued_at
-    FROM exam_scores es
-    JOIN courses cr ON es.course_id = cr.id
-    LEFT JOIN certificates c ON (c.user_id = es.user_id AND c.course_id = es.course_id)
-    WHERE es.user_id = ?
-    ORDER BY es.id DESC
-  `;
-
-  db.all(sql, [userId], async (err, rows) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: err.message });
-    }
-
-    const processedList = [];
-
-    for (const row of rows) {
-      const isPassed = String(row.status).trim().toLowerCase() === 'completed' || 
-                       String(row.status).trim().toUpperCase() === 'PASS';
-      
-      let certUuid = row.cert_uuid;
-      let verificationCode = row.verification_code;
-      let issuedAt = row.issued_at;
-
-      // ถ้าสอบผ่านแต่ยังไม่มีใบเซอร์ ให้สร้างลง DB ทันที
-      if (isPassed && !certUuid) {
-        certUuid = uuidv4();
-        const randomNum = Math.floor(1000 + Math.random() * 9000);
-        verificationCode = `CERT-2026-${randomNum}`;
-        issuedAt = new Date().toLocaleDateString('th-TH', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-        const pdfUrl = `/certificates/${certUuid}.pdf`;
-
-        const insertCertSql = `
-          INSERT INTO certificates (uuid, verification_code, user_id, course_id, pdf_url, issued_at)
-          VALUES (?, ?, ?, ?, ?, ?)
-          ON CONFLICT(user_id, course_id) DO NOTHING
-        `;
-
-        await new Promise((resolve) => {
-          db.run(insertCertSql, [certUuid, verificationCode, userId, row.course_id, pdfUrl, issuedAt], function(insertErr) {
-            // ถ้ามีการ Insert ซ้ำพร้อมกัน (changes = 0) ให้ดึงใบที่มีอยู่แล้วมาใช้
-            if (!insertErr && this.changes === 0) {
-              db.get(
-                `SELECT uuid, verification_code, issued_at FROM certificates WHERE user_id = ? AND course_id = ?`,
-                [userId, row.course_id],
-                (_fErr, existing) => {
-                  if (existing) {
-                    certUuid = existing.uuid;
-                    verificationCode = existing.verification_code;
-                    issuedAt = existing.issued_at;
-                  }
-                  resolve();
-                }
-              );
-            } else {
-              resolve();
-            }
-          });
-        });
-      }
-
-      processedList.push({
-        exam_id: row.exam_score_id,
-        course_id: row.course_id,
-        course_title: row.course_title,
-        score: row.score,
-        status: row.status,
-        is_passed: isPassed,
-        tested_at: row.tested_at,
-        cert_uuid: certUuid,
-        verification_code: verificationCode,
-        issued_at: issuedAt
-      });
-    }
-
-    res.json({ success: true, data: processedList });
-  });
-});
-
-// ดึงสรุปข้อมูลของ Supervisor
-app.get('/api/supervisor/dashboard-summary', authenticateToken, requireSupervisor, (req, res) => {
-  const supervisorId = req.user.id;
-  const { section_id, team_id } = req.query;
-
-  const supSql = `
-    SELECT s.line_id 
-    FROM users u
-    JOIN teams t ON t.id = u.team_id
-    JOIN sections s ON s.id = t.section_id
-    WHERE u.id = ? AND u.role_id = 3
-  `;
-
-  db.get(supSql, [supervisorId], (err, sup) => {
-    if (err || !sup) {
-      return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์เข้าถึง หรือไม่ใช่หัวหน้างาน' });
-    }
-
-    const boundLineId = sup.line_id;
-    let filterCondition = 'WHERE u.role_id = 1 AND s.line_id = ?';
-    const params = [boundLineId];
-
-    if (team_id) {
-      filterCondition += ` AND u.team_id = ?`;
-      params.push(team_id);
-    } else if (section_id) {
-      filterCondition += ` AND s.id = ?`;
-      params.push(section_id);
-    }
-
-    const sqlMembers = `
-      SELECT 
-        u.id AS user_id,
-        u.employee_code,
-        u.first_name,
-        u.last_name,
-        u.position,
-        l.name AS line_name,
-        s.name AS section_name,
-        t.id AS team_id,
-        t.name AS team_name,
-        cr.id AS course_id,
-        cr.title AS course_title,
+    const sql = `
+      SELECT
+        es.id AS exam_score_id,
         es.score,
         es.status,
         es.tested_at,
+        cr.id AS course_id,
+        cr.title AS course_title,
         c.uuid AS cert_uuid,
-        c.verification_code
-      FROM users u
-      JOIN teams t ON u.team_id = t.id
-      JOIN sections s ON t.section_id = s.id
-      JOIN lines l ON s.line_id = l.id
-      LEFT JOIN exam_scores es ON u.id = es.user_id
-      LEFT JOIN courses cr ON es.course_id = cr.id
-      LEFT JOIN certificates c ON (u.id = c.user_id AND cr.id = c.course_id)
-      ${filterCondition}
-      ORDER BY u.id ASC, es.tested_at DESC
-    `;
-
-    const sqlTopFailed = `
-      SELECT 
-        cr.title AS course_title,
-        COUNT(es.id) AS fail_count
+        c.verification_code,
+        c.issued_at
       FROM exam_scores es
-      JOIN users u ON es.user_id = u.id
-      JOIN teams t ON u.team_id = t.id
-      JOIN sections s ON t.section_id = s.id
-      JOIN lines l ON s.line_id = l.id
       JOIN courses cr ON es.course_id = cr.id
-      ${filterCondition} AND (LOWER(es.status) = 'failed' OR UPPER(es.status) = 'FAIL')
-      GROUP BY cr.id
-      ORDER BY fail_count DESC
-      LIMIT 5
+      LEFT JOIN certificates c
+        ON c.user_id = es.user_id
+        AND c.course_id = es.course_id
+      WHERE es.user_id = ?
+      ORDER BY es.id DESC
     `;
 
-    const sqlTeamCompare = `
-      SELECT 
-        t.name AS team_name,
-        COUNT(DISTINCT u.id) AS total_members,
-        COUNT(CASE WHEN LOWER(es.status) = 'completed' OR UPPER(es.status) = 'PASS' THEN 1 END) AS passed_records,
-        COUNT(es.id) AS total_exams,
-        AVG(es.score) AS avg_score
-      FROM teams t
-      JOIN sections s ON s.id = t.section_id
-      JOIN users u ON u.team_id = t.id
-      LEFT JOIN exam_scores es ON u.id = es.user_id
-      WHERE s.line_id = ? AND u.role_id = 1
-      GROUP BY t.id, t.name
-    `;
+    db.all(sql, [userId], async (err, rows) => {
+      if (err) {
+        console.error('Fetch dashboard error:', err.message);
 
-    const sqlActivities = `
-      SELECT 
-        u.first_name,
-        u.last_name,
-        cr.title AS course_title,
-        es.status,
-        es.score,
-        es.tested_at
-      FROM exam_scores es
-      JOIN users u ON es.user_id = u.id
-      JOIN teams t ON u.team_id = t.id
-      JOIN sections s ON t.section_id = s.id
-      JOIN lines l ON s.line_id = l.id
-      JOIN courses cr ON es.course_id = cr.id
-      ${filterCondition}
-      ORDER BY es.tested_at DESC
-      LIMIT 6
-    `;
+        return res.status(500).json({
+          success: false,
+          message: 'ไม่สามารถดึงข้อมูลผลสอบได้'
+        });
+      }
 
-    db.all(sqlMembers, params, (err, memberRows) => {
-      if (err) return res.status(500).json({ success: false, message: err.message });
+      try {
+        const processedList = [];
 
-      db.all(sqlTopFailed, params, (err2, topFailedRows) => {
-        if (err2) return res.status(500).json({ success: false, message: err2.message });
+        for (const row of rows) {
+          const score = Number(row.score);
+          const status = String(row.status ?? '')
+            .trim()
+            .toLowerCase();
 
-        db.all(sqlTeamCompare, [boundLineId], (err3, teamCompareRows) => {
-          if (err3) return res.status(500).json({ success: false, message: err3.message });
+          // ต้องได้คะแนนอย่างน้อย 80 และมีสถานะผ่าน
+          const isPassed =
+            Number.isFinite(score) &&
+            score >= 80 &&
+            ['completed', 'pass'].includes(status);
 
-          db.all(sqlActivities, params, (err4, activityRows) => {
-            if (err4) return res.status(500).json({ success: false, message: err4.message });
+          let certUuid = row.cert_uuid ?? null;
+          let verificationCode = row.verification_code ?? null;
+          let issuedAt = row.issued_at ?? null;
 
-            res.json({
-              success: true,
-              members: memberRows || [],
-              topFailed: topFailedRows || [],
-              teamCompare: teamCompareRows || [],
-              activities: activityRows || []
+          if (isPassed && !certUuid) {
+            const newUuid = uuidv4();
+            const year = new Date().getFullYear();
+
+            const newVerificationCode =
+              `CERT-${year}-${newUuid.slice(0, 8).toUpperCase()}`;
+
+            // คงรูปแบบวันที่เดิมให้หน้าเว็บยังแสดงได้เหมือนเดิม
+            const newIssuedAt = new Date().toLocaleDateString('th-TH', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
             });
+
+            const pdfUrl = `/certificates/${newUuid}.pdf`;
+
+            const insertCertSql = `
+              INSERT INTO certificates (
+                uuid,
+                verification_code,
+                user_id,
+                course_id,
+                pdf_url,
+                issued_at
+              )
+              VALUES (?, ?, ?, ?, ?, ?)
+              ON CONFLICT(user_id, course_id) DO NOTHING
+            `;
+
+            await new Promise((resolve, reject) => {
+              db.run(
+                insertCertSql,
+                [
+                  newUuid,
+                  newVerificationCode,
+                  userId,
+                  row.course_id,
+                  pdfUrl,
+                  newIssuedAt
+                ],
+                function (insertErr) {
+                  if (insertErr) {
+                    return reject(insertErr);
+                  }
+
+                  resolve();
+                }
+              );
+            });
+
+            // อ่านใบที่มีอยู่จริง ทั้งกรณีสร้างใหม่และมีใบเดิมแล้ว
+            const savedCert = await new Promise((resolve, reject) => {
+              db.get(
+                `
+                  SELECT uuid, verification_code, issued_at
+                  FROM certificates
+                  WHERE user_id = ? AND course_id = ?
+                `,
+                [userId, row.course_id],
+                (readErr, certificate) => {
+                  if (readErr) {
+                    return reject(readErr);
+                  }
+
+                  if (!certificate) {
+                    return reject(
+                      new Error('Certificate not found after insert')
+                    );
+                  }
+
+                  resolve(certificate);
+                }
+              );
+            });
+
+            // ใช้เฉพาะข้อมูลที่อ่านได้จริงจากฐานข้อมูล
+            certUuid = savedCert.uuid;
+            verificationCode = savedCert.verification_code;
+            issuedAt = savedCert.issued_at;
+          }
+
+          processedList.push({
+            exam_id: row.exam_score_id,
+            course_id: row.course_id,
+            course_title: row.course_title,
+            score: row.score,
+            status: row.status,
+            is_passed: isPassed,
+            tested_at: row.tested_at,
+            cert_uuid: certUuid,
+            verification_code: verificationCode,
+            issued_at: issuedAt
           });
+        }
+
+        return res.json({
+          success: true,
+          data: processedList
+        });
+      } catch (error) {
+        console.error('Process dashboard error:', error.message);
+
+        return res.status(500).json({
+          success: false,
+          message: 'ไม่สามารถประมวลผลข้อมูลใบรับรองได้ กรุณาลองใหม่'
+        });
+      }
+    });
+  }
+);
+
+// ดึงสรุปข้อมูลของ Supervisor
+app.get(
+  '/api/supervisor/dashboard-summary',
+  authenticateToken,
+  requireSupervisor,
+  async (req, res) => {
+    const supervisorId = req.user.id;
+    const { section_id, team_id } = req.query;
+
+    // ไม่เลือกตัวกรองได้ แต่ถ้าระบุต้องเป็นจำนวนเต็มบวก
+    const isValidOptionalId = (value) =>
+      value === undefined ||
+      value === '' ||
+      (
+        typeof value === 'string' &&
+        /^[1-9]\d*$/.test(value) &&
+        Number.isSafeInteger(Number(value))
+      );
+
+    if (
+      !isValidOptionalId(section_id) ||
+      !isValidOptionalId(team_id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'รหัสแผนกหรือทีมไม่ถูกต้อง'
+      });
+    }
+
+    const sectionId = section_id ? Number(section_id) : null;
+    const teamId = team_id ? Number(team_id) : null;
+
+    // ใช้ Promise เพื่อให้จัดการข้อผิดพลาดรวมใน try/catch ได้
+    const getRow = (sql, params = []) =>
+      new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+          if (err) return reject(err);
+          resolve(row);
         });
       });
-    });
-  });
-});
+
+    const getRows = (sql, params = []) =>
+      new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+          if (err) return reject(err);
+          resolve(rows || []);
+        });
+      });
+
+    try {
+      // หาสายการผลิตจากบัญชีจริง ไม่รับจาก Frontend
+      const supervisor = await getRow(
+        `
+          SELECT s.line_id
+          FROM users u
+          JOIN teams t ON t.id = u.team_id
+          JOIN sections s ON s.id = t.section_id
+          WHERE u.id = ? AND u.role_id = 3
+        `,
+        [supervisorId]
+      );
+
+      if (!supervisor) {
+        return res.status(403).json({
+          success: false,
+          message: 'ไม่พบสายการผลิตที่คุณมีสิทธิ์เข้าถึง'
+        });
+      }
+
+      const boundLineId = supervisor.line_id;
+
+      // ตรวจว่าแผนกอยู่ในสายการผลิตที่รับผิดชอบ
+      if (sectionId !== null) {
+        const section = await getRow(
+          `
+            SELECT id
+            FROM sections
+            WHERE id = ? AND line_id = ?
+          `,
+          [sectionId, boundLineId]
+        );
+
+        if (!section) {
+          return res.status(403).json({
+            success: false,
+            message: 'แผนกที่เลือกไม่อยู่ในขอบเขตที่คุณเข้าถึงได้'
+          });
+        }
+      }
+
+      // ตรวจขอบเขตทีม และความสัมพันธ์กับแผนกที่เลือก
+      if (teamId !== null) {
+        const team = await getRow(
+          `
+            SELECT t.id, t.section_id
+            FROM teams t
+            JOIN sections s ON s.id = t.section_id
+            WHERE t.id = ? AND s.line_id = ?
+          `,
+          [teamId, boundLineId]
+        );
+
+        if (!team) {
+          return res.status(403).json({
+            success: false,
+            message: 'ทีมที่เลือกไม่อยู่ในขอบเขตที่คุณเข้าถึงได้'
+          });
+        }
+
+        if (
+          sectionId !== null &&
+          Number(team.section_id) !== sectionId
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: 'ทีมที่เลือกไม่อยู่ในแผนกที่ระบุ'
+          });
+        }
+      }
+
+      // ใช้ตัวกรองเดียวกันกับข้อมูลทั้ง 4 ส่วน
+      let filterCondition = `
+        WHERE u.role_id = 1
+          AND s.line_id = ?
+      `;
+
+      const params = [boundLineId];
+
+      if (sectionId !== null) {
+        filterCondition += ' AND s.id = ?';
+        params.push(sectionId);
+      }
+
+      if (teamId !== null) {
+        filterCondition += ' AND t.id = ?';
+        params.push(teamId);
+      }
+
+      const passCondition = `
+        es.score >= 80
+        AND LOWER(TRIM(es.status)) IN ('completed', 'pass')
+      `;
+
+      // ไม่นับสถานะรอสอบ/รอผลเป็นสอบตก
+      const failCondition = `
+        LOWER(TRIM(es.status)) IN ('failed', 'fail')
+        OR (
+          es.score < 80
+          AND LOWER(TRIM(es.status)) IN ('completed', 'pass')
+        )
+      `;
+
+      const sqlMembers = `
+        SELECT
+          u.id AS user_id,
+          u.employee_code,
+          u.first_name,
+          u.last_name,
+          u.position,
+          l.name AS line_name,
+          s.name AS section_name,
+          t.id AS team_id,
+          t.name AS team_name,
+          cr.id AS course_id,
+          cr.title AS course_title,
+          es.score,
+          es.status,
+          es.tested_at,
+          c.uuid AS cert_uuid,
+          c.verification_code
+        FROM users u
+        JOIN teams t ON t.id = u.team_id
+        JOIN sections s ON s.id = t.section_id
+        JOIN lines l ON l.id = s.line_id
+        LEFT JOIN exam_scores es ON es.user_id = u.id
+        LEFT JOIN courses cr ON cr.id = es.course_id
+        LEFT JOIN certificates c
+          ON c.user_id = u.id
+          AND c.course_id = cr.id
+        ${filterCondition}
+        ORDER BY u.id ASC, es.tested_at DESC, es.id DESC
+      `;
+
+      const sqlTopFailed = `
+        SELECT
+          cr.title AS course_title,
+          COUNT(es.id) AS fail_count
+        FROM exam_scores es
+        JOIN users u ON u.id = es.user_id
+        JOIN teams t ON t.id = u.team_id
+        JOIN sections s ON s.id = t.section_id
+        JOIN courses cr ON cr.id = es.course_id
+        ${filterCondition}
+          AND (${failCondition})
+        GROUP BY cr.id, cr.title
+        ORDER BY fail_count DESC, cr.id ASC
+        LIMIT 5
+      `;
+
+      const sqlTeamCompare = `
+        SELECT
+          t.name AS team_name,
+          COUNT(DISTINCT u.id) AS total_members,
+          COUNT(
+            CASE
+              WHEN ${passCondition} THEN 1
+            END
+          ) AS passed_records,
+          COUNT(es.id) AS total_exams,
+          AVG(es.score) AS avg_score
+        FROM teams t
+        JOIN sections s ON s.id = t.section_id
+        JOIN users u ON u.team_id = t.id
+        LEFT JOIN exam_scores es ON es.user_id = u.id
+        ${filterCondition}
+        GROUP BY t.id, t.name
+        ORDER BY t.id ASC
+      `;
+
+      const sqlActivities = `
+        SELECT
+          u.first_name,
+          u.last_name,
+          cr.title AS course_title,
+          es.status,
+          es.score,
+          es.tested_at
+        FROM exam_scores es
+        JOIN users u ON u.id = es.user_id
+        JOIN teams t ON t.id = u.team_id
+        JOIN sections s ON s.id = t.section_id
+        JOIN courses cr ON cr.id = es.course_id
+        ${filterCondition}
+        ORDER BY es.tested_at DESC, es.id DESC
+        LIMIT 6
+      `;
+
+      const [
+        memberRows,
+        topFailedRows,
+        teamCompareRows,
+        activityRows
+      ] = await Promise.all([
+        getRows(sqlMembers, params),
+        getRows(sqlTopFailed, params),
+        getRows(sqlTeamCompare, params),
+        getRows(sqlActivities, params)
+      ]);
+
+      res.set('Cache-Control', 'no-store');
+
+      return res.json({
+        success: true,
+        members: memberRows,
+        topFailed: topFailedRows,
+        teamCompare: teamCompareRows,
+        activities: activityRows
+      });
+    } catch (error) {
+      console.error(
+        'Supervisor dashboard-summary error:',
+        error.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถดึงข้อมูลสรุปได้ กรุณาลองใหม่'
+      });
+    }
+  }
+);
 
 app.get('/api/supervisor/dashboard/:supervisorId', authenticateToken, requireSupervisor, requireOwnSupervisorId, (req, res) => {
   const supervisorId = req.user.id;
@@ -821,3 +1026,4 @@ app.post('/api/supervisor/reset-user-password', authenticateToken, requireSuperv
 app.listen(port, '0.0.0.0', () => {
   console.log(`Backend Server กำลังรันที่ http://localhost:${port}`);
 });
+

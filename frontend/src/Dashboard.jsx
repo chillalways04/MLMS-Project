@@ -404,7 +404,7 @@ function Dashboard() {
                 <div className="course-action-item" key={item.exam_id || item.course_id}>
                   <div>
                     <div className="course-title">{item.course_title}</div>
-                    <small>{isPass ? "ผ่านเกณฑ์ 80% แล้ว" : "คะแนนไม่ถึงเกณฑ์ (ต้องซ่อม)"}</small>
+                    <small>{isPass ? "ผ่านเกณฑ์ 80% แล้ว" : "คะแนนไม่ถึงเกณฑ์ 80% (ต้องซ่อม)"}</small>
                   </div>
                   <div className="course-action-right">
                     <span className={isPass ? "text-success font-bold" : "text-warning"}>{score}%</span>

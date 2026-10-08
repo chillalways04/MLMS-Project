@@ -30,6 +30,8 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.set('trust proxy', 1);
+
 // ป้องกัน Brute-force การสุ่มรหัสผ่าน
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -50,44 +52,60 @@ const verifyLimiter = rateLimit({
 });
 
 const dbPath = path.resolve(__dirname, 'Alldata.db');
+
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.error('Database connection error:', err.message);
-  } else {
-    console.log('Connect to Database.');
+    console.error(
+      'Database connection error:',
+      err.message
+    );
+
+    process.exit(1);
+    return;
   }
 
+  console.log('Connect to Database.');
+
   db.serialize(() => {
-    db.run('PRAGMA foreign_keys = ON;');
-
-    // 1. ลบแถวที่ user_id + course_id ซ้ำกัน โดยเก็บเฉพาะแถวที่มี ID แรกสุดไว้
-    const cleanupDuplicateSql = `
-      DELETE FROM certificates
-      WHERE rowid NOT IN (
-        SELECT MIN(rowid)
-        FROM certificates
-        GROUP BY user_id, course_id
-      );
-    `;
-
-    db.run(cleanupDuplicateSql, (cleanErr) => {
-      if (cleanErr) {
-        console.error('ล้างข้อมูลใบเซอร์ที่ซ้ำล้มเหลว:', cleanErr.message);
-        return;
+    // เปิดใช้งาน Foreign Key
+    db.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
+      if (pragmaErr) {
+        console.error(
+          'เปิด Foreign Key ล้มเหลว:',
+          pragmaErr.message
+        );
+      } else {
+        console.log(
+          'เปิดใช้งาน Foreign Key สำเร็จ'
+        );
       }
-
-      // 2. เมื่อไม่มีข้อมูลซ้ำแล้ว ให้สร้าง UNIQUE INDEX ได้อย่างปลอดภัย
-      db.run(
-        `CREATE UNIQUE INDEX IF NOT EXISTS idx_cert_user_course ON certificates(user_id, course_id);`,
-        (idxErr) => {
-          if (idxErr) {
-            console.error('สร้าง Unique Index certificates ล้มเหลว:', idxErr.message);
-          } else {
-            console.log('สร้าง/ตรวจสอบ Unique Index certificates สำเร็จ (ป้องกันใบเซอร์ซ้ำถาวร)');
-          }
-        }
-      );
     });
+
+    // ป้องกัน 1 คนมี Certificate ซ้ำในคอร์สเดียวกัน
+    // คำสั่งนี้ไม่ลบ Certificate
+    db.run(
+      `
+        CREATE UNIQUE INDEX IF NOT EXISTS
+        idx_cert_user_course
+        ON certificates(user_id, course_id)
+      `,
+      (idxErr) => {
+        if (idxErr) {
+          console.error(
+            'ตรวจสอบ Unique Index ล้มเหลว:',
+            idxErr.message
+          );
+
+          console.error(
+            'อาจมี Certificate ซ้ำอยู่ในฐานข้อมูล กรุณาตรวจสอบก่อน'
+          );
+        } else {
+          console.log(
+            'ตรวจสอบ Unique Index certificates สำเร็จ'
+          );
+        }
+      }
+    );
   });
 });
 
@@ -340,15 +358,7 @@ app.post('/api/register', async (req, res) => {
     });
   }
 
-  const getRoleId = (pos) => {
-    if (!pos) return 1;
-    const p = pos.trim().toLowerCase();
-    if (p === 'supervisor' || p === 'หัวหน้างาน') return 3;
-    if (p === 'leader' || p === 'หัวหน้ากะ') return 2;
-    return 1;
-  };
-
-  const roleId = getRoleId(position);
+  const roleId = 1;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const createdAt = new Date().toISOString().replace('T', ' ').substring(0, 19);

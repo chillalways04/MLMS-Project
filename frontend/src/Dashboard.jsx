@@ -19,17 +19,16 @@ function Dashboard() {
 
   const navigate = useNavigate();
 
-  // ตรวจเกณฑ์การผ่าน (คะแนน >= 80% หรือสถานะ PASS/COMPLETED โดยไม่สอบตก)
-  const isCoursePassed = (item) => {
-    if (!item) return false;
-    const statusStr = String(item.status || "").trim().toLowerCase();
-    if (["failed", "fail"].includes(statusStr) || item.is_passed === false || item.is_passed === 0) {
-      return false;
-    }
-    const score = Number(item.score ?? item.exam_score ?? 0);
-    const hasPassStatus = ["completed", "pass"].includes(statusStr);
-    return score >= 80 && (hasPassStatus || item.is_passed === true || item.is_passed === 1);
-  };
+  // ตรวจเกณฑ์การผ่าน (คะแนน >= 80%)
+ const isCoursePassed = (item) => {
+  if (!item) return false;
+
+  const score = Number(
+    item.score ?? item.exam_score ?? 0
+  );
+
+  return Number.isFinite(score) && score >= 80;
+};
 
   useEffect(() => {
     const token = localStorage.getItem("token");

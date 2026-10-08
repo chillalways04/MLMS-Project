@@ -247,7 +247,6 @@ function Register() {
             <select name="position" value={formData.position} onChange={handleChange} required>
               <option value="Operator A">Operator A</option>
               <option value="Technical Operator B">Technical Operator B</option>
-              <option value="Supervisor">Supervisor</option>
             </select>
           </div>
 

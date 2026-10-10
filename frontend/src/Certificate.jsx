@@ -245,7 +245,7 @@ const handleDownloadPDF = async () => {
   const certUuid = certData.uuid;
 
   // URL สำหรับมือถือสแกนผ่าน QR Code อัปเดต Subdomain Cloudflare Tunnel ที่นี่ //คำสั่ง npx cloudflared tunnel --url http://localhost:5173
-  const mobileVerifyUrl = `https://staff-being-accommodation-moore.trycloudflare.com/verify/${certUuid}`;
+  const mobileVerifyUrl = `https://expiration-deeply-secretariat-subjective.trycloudflare.com/verify/${certUuid}`;
   const localTestUrl = `${window.location.origin}/verify/${certUuid}`;
   const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(mobileVerifyUrl)}&color=1a237e&bgcolor=fffdf6`;
 

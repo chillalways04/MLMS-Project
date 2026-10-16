@@ -208,7 +208,7 @@ function Dashboard() {
           {error}
         </p>
       )}
-      <header className="dash-header">
+    <header className="dash-header">
         <div>
           <span className="welcome-text">Welcome back,</span>
           <h2 className="user-name-highlight">
@@ -219,6 +219,14 @@ function Dashboard() {
           </p>
         </div>
         <div className="header-actions">
+          <button 
+            type="button"
+            className="btn-back-courses"
+            onClick={() => alert("ฟังก์ชันนี้กำลังพัฒนา (อยู่นอกเหนือขอบเขต)")}
+          >
+            📚 กลับสู่คอร์สเรียน
+          </button>
+
           <div className="notification-icon">
             🔔<span className="badge-count">3</span>
           </div>

@@ -10,7 +10,9 @@ function Dashboard() {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
   });
-
+  
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -231,10 +233,16 @@ function Dashboard() {
             🔔<span className="badge-count">3</span>
           </div>
           <div className="help-icon">❓</div>
-          <div className="user-avatar-tag">
+
+          <div 
+            className="user-avatar-tag clickable-profile" 
+            onClick={() => setIsProfileOpen(true)}
+            title="คลิกเพื่อดูข้อมูลพนักงาน"
+          >
             <span className="mini-avatar">👤</span>
             <span>{user?.first_name || "สมชาย"}</span>
           </div>
+
           <button className="btn-logout-icon" title="ออกจากระบบ" onClick={handleLogout}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -245,6 +253,137 @@ function Dashboard() {
           </button>
         </div>
       </header>
+
+      {isProfileOpen && (
+        <div className="profile-drawer-overlay" onClick={() => setIsProfileOpen(false)}>
+          <aside className="profile-drawer-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <h3>ข้อมูลพนักงาน</h3>
+              <button 
+                type="button" 
+                className="btn-close-drawer" 
+                onClick={() => setIsProfileOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="drawer-body">
+              <div className="profile-avatar-card">
+                <div className="avatar-circle-lg">👤</div>
+                <h4>{user?.first_name || "สมชาย"} {user?.last_name || "ใจดี"}</h4>
+                <span className="role-pill">
+                  {user?.role_id === 3 ? "Supervisor (หัวหน้างาน)" : "Employee (พนักงานปฏิบัติการ)"}
+                </span>
+              </div>
+
+              <div className="profile-info-list">
+                <div className="info-row">
+                  <span className="info-label">รหัสพนักงาน</span>
+                  <span className="info-value">{user?.employee_code || "EMP-001"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">ตำแหน่ง (Position)</span>
+                  <span className="info-value">{user?.position || "Filling Operator"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">สายการผลิต (Line)</span>
+                  <span className="info-value">Line {user?.line_id || "1"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">แผนก (Section)</span>
+                  <span className="info-value">Section {user?.section_id || "1"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">ทีม (Team)</span>
+                  <span className="info-value">Team {user?.team_id || "A"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">สถานะบัญชี</span>
+                  <span className="info-value status-active">● ปกติ (Verified)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="drawer-footer">
+              <button 
+                type="button" 
+                className="btn-drawer-close-full" 
+                onClick={() => setIsProfileOpen(false)}
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+      {showProgressModal && (
+        <div className="progress-modal-overlay" onClick={() => setShowProgressModal(false)}>
+          <div className="progress-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="progress-modal-header">
+              <div>
+                <h3>รายละเอียดความก้าวหน้าการเรียนทั้งหมด</h3>
+                <p>สรุปผลการเรียนและคะแนนสอบรายวิชา (ความคืบหน้ารวม {overallProgress}%)</p>
+              </div>
+              <button 
+                type="button" 
+                className="btn-close-modal" 
+                onClick={() => setShowProgressModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="progress-modal-body">
+              <table className="progress-detail-table">
+                <thead>
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>ชื่อหลักสูตร</th>
+                    <th className="text-center">คะแนนที่ได้</th>
+                    <th className="text-center">เกณฑ์ผ่าน</th>
+                    <th className="text-center">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uniqueCourses.map((c, idx) => {
+                    const score = Number(c.score || 0);
+                    const isPass = isCoursePassed(c);
+                    return (
+                      <tr key={c.exam_id || c.course_id || idx}>
+                        <td>{idx + 1}</td>
+                        <td className="course-full-title">
+                          <i className={`dot ${isPass ? 'dot-green' : score > 0 ? 'dot-yellow' : 'dot-gray'}`}></i>
+                          {c.course_title}
+                        </td>
+                        <td className="text-center">
+                          <strong>{score}%</strong>
+                        </td>
+                        <td className="text-center text-muted">80%</td>
+                        <td className="text-center">
+                          <span className={`status-badge-pill ${isPass ? 'badge-pass' : score > 0 ? 'badge-learning' : 'badge-none'}`}>
+                            {isPass ? 'ผ่านเกณฑ์' : score > 0 ? 'กำลังเรียน' : 'ยังไม่เริ่ม'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="progress-modal-footer">
+              <button 
+                type="button" 
+                className="btn-modal-close-primary" 
+                onClick={() => setShowProgressModal(false)}
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="stats-row">
         <div className="stat-box">
@@ -313,7 +452,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="grid-3-col">
+     <section className="grid-3-col">
         <div className="card">
           <h4>ความก้าวหน้าการเรียนของฉัน</h4>
           <div className="circle-progress-wrapper">
@@ -346,7 +485,14 @@ function Dashboard() {
               })}
             </div>
           </div>
-          <button className="btn-outline w-100 mt-auto">ดูรายละเอียดทั้งหมด</button>
+          
+          <button 
+            type="button"
+            className="btn-outline w-100 mt-auto"
+            onClick={() => setShowProgressModal(true)}
+          >
+            ดูรายละเอียดทั้งหมด ({uniqueCourses.length} หลักสูตร)
+          </button>
         </div>
 
         <div className="card">
@@ -369,7 +515,6 @@ function Dashboard() {
               <div className="text-muted" style={{ margin: 'auto', padding: '20px 0' }}>ไม่มีรายการแผนการเรียน</div>
             )}
           </div>
-          <button className="btn-outline w-100 mt-auto">ดูแผนการเรียนทั้งหมด</button>
         </div>
 
         <div className="card">
@@ -395,7 +540,6 @@ function Dashboard() {
               <small className="text-danger">ครบกำหนด 25 พ.ค. 67</small>
             </li>
           </ul>
-          <button className="btn-outline w-100 mt-auto">ดูแผนการเรียนทั้งหมด</button>
         </div>
       </section>
 
@@ -597,7 +741,7 @@ function Dashboard() {
               <button className="btn-view-pdf" onClick={handleViewPDF}>
                 View PDF (ใบประกาศ)
               </button>
-              <button className="btn-close-modal" onClick={() => setShowModal(false)}>
+              <button className="btn-close-modal2" onClick={() => setShowModal(false)}>
                 ปิดหน้าต่าง
               </button>
             </div>

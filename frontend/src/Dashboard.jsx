@@ -155,6 +155,23 @@ function Dashboard() {
     };
   }, [uniqueCourses]);
 
+  // State สำหรับจัดการ Modal ปุ่มซ่อม
+const [selectedFailedCourse, setSelectedFailedCourse] = useState(null);
+const [isRetakeModalOpen, setIsRetakeModalOpen] = useState(false);
+
+// ฟังก์ชันเปิด Modal เมื่อคลิกปุ่ม "ซ่อม"
+const handleOpenRetakeModal = (item) => {
+  setSelectedFailedCourse(item);
+  setIsRetakeModalOpen(true);
+};
+
+// ฟังก์ชันปิด Modal
+const handleCloseRetakeModal = () => {
+  setSelectedFailedCourse(null);
+  setIsRetakeModalOpen(false);
+};
+
+
   // คำนวณแผนการเรียนตามหมวดหมู่
   const categoryPlans = useMemo(() => {
     const categoryConfigs = [
@@ -217,7 +234,7 @@ function Dashboard() {
             {user.first_name || "นายพนักงานปกติ"} {user.last_name || ""}
           </h2>
           <p className="user-subtitle">
-            Operator A - Team {user.team_id || "A"} / Line 1 / {user.position || "Filling"}
+            {user.position} - Team {user.team_id || "A"} / Line 1 / {user.position || "Filling"}
           </p>
         </div>
         <div className="header-actions">
@@ -517,30 +534,31 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-header-flex">
-            <h4>บทเรียนที่ต้องเรียน / กำหนดเวลา</h4>
-            <a href="#all" className="link-text">ดูทั้งหมด</a>
-          </div>
-          <ul className="due-list">
-            <li>
-              <span>📖 GMP Refresher Training</span>
-              <small className="text-danger">ครบกำหนด 10 พ.ค. 67</small>
-            </li>
-            <li>
-              <span>📖 QC Basic</span>
-              <small className="text-danger">ครบกำหนด 15 พ.ค. 67</small>
-            </li>
-            <li>
-              <span>📖 Machine Setup</span>
-              <small className="text-danger">ครบกำหนด 20 พ.ค. 67</small>
-            </li>
-            <li>
-              <span>📖 5 ส ในการปฏิบัติงาน</span>
-              <small className="text-danger">ครบกำหนด 25 พ.ค. 67</small>
-            </li>
-          </ul>
-        </div>
+   <div className="card">
+              <div className="card-header-flex">
+                <h4>บทเรียนทั้งหมดในระบบ</h4>
+                <a href="#all" className="link-text">ดูทั้งหมด</a>
+              </div>
+              <ul className="due-list">
+                {(courses || []).map((course, index) => {
+                  // ดึงชื่อคอร์สจากฐานข้อมูล (รองรับทุกชื่อคอลัมน์ที่คุณอาจตั้งไว้)
+                  const courseTitle =
+                    course.course_name ||
+                    course.title ||
+                    course.name ||
+                    course.courseTitle ||
+                    course.course_title ||
+                    course.subject ||
+                    `หลักสูตรที่ ${index + 1}`;
+
+                  return (
+                    <li key={course.course_id || course.id || index}>
+                      <span>📖 {courseTitle}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
       </section>
 
       <section className="grid-3-col">
@@ -565,8 +583,7 @@ function Dashboard() {
                          ผ่านการทดสอบ
                       </button>
                     ) : (
-                      <button className="btn-primary-sm">ดูบทเรียน</button>
-                    )}
+                      <button className="btn-primary-sm" onClick={() => alert(`ฟังก์ชันนี้กำลังพัฒนา(อยู่นอกเหนือขอบเขต)`)}>ดูเเบบทดสอบ</button>)}
                   </div>
                 </div>
               );
@@ -587,8 +604,8 @@ function Dashboard() {
                 </div>
                 <div className="course-action-right">
                   <span className="text-danger">คะแนน {item.score}%</span>
-                  <button className="btn-outline-danger-sm">ซ่อม</button>
-                </div>
+                    <button className="btn-outline-danger-sm" onClick={() => handleOpenRetakeModal(item)}>ซ่อม</button>               
+               </div>
               </div>
             ))
           )}
@@ -748,6 +765,38 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {isRetakeModalOpen && selectedFailedCourse && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h3>คุณไม่ผ่านการทดสอบในหลักสูตรนี้</h3>
+                  <p style={{ margin: "12px 0", fontSize: "16px", fontWeight: "bold", color: "#dc2626" }}>
+                    {selectedFailedCourse.course_title}
+                  </p>
+                  <p>คะแนนครั้งล่าสุดของคุณ: <span style={{ color: "#dc2626", fontWeight: "bold" }}>{selectedFailedCourse.score}%</span> (ต้องได้ 80% ขึ้นไปถึงจะผ่านและได้รับใบเซอร์)</p>
+                  <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "8px" }}>
+                    วันที่สอบครั้งก่อน: {selectedFailedCourse.tested_at || "-"}
+                  </p>
+                  
+                  <div style={{ marginTop: "20px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                    <button className="btn-secondary-sm" onClick={handleCloseRetakeModal}>
+                      ปิดหน้าต่าง
+                    </button>
+                    <button 
+                      className="btn-danger-sm" 
+                      onClick={() => {
+                        alert(`ฟังก์ชันนี้อยู่ในระหว่างการพัฒนา(อยู่นอกเหนือขอบเขต)`);
+                        // ตรงนี้สามารถใส่ logic พาไปหน้าทำข้อสอบ หรือยิง API ขอสิทธิ์สอบซ่อมได้เลยครับ
+                        handleCloseRetakeModal();
+                      }}
+                    >
+                      เริ่มทำข้อสอบซ่อมตอนนี้
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
     </div>
   );
 }

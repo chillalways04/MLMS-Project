@@ -575,18 +575,23 @@ html, body {
   width: 100%;
 }
 
+
 .stat-box {
-  background: var(--bg-card);
-  padding: 18px;
-  border-radius: var(--radius-lg);
+  background: var(--sv-card-bg);
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius);
+  padding: 12px;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  justify-content: flex-start;
+  gap: 12px;
+  box-shadow: var(--sv-shadow);
+  box-sizing: border-box;
+  min-width: 0;
   transition: var(--transition);
-  text-align: left;
 }
+
 
 .stat-box:hover {
   transform: translateY(-2px);
@@ -1137,6 +1142,158 @@ html, body {
 .contact-name { font-size: 13px; font-weight: 600; color: var(--text-main); text-align: left; }
 .contact-tel { font-size: 12px; font-weight: 600; color: var(--text-main); }
 
+/* =========================================
+   1. Modal Overlay & Content (หน้าต่างป๊อปอัป)
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* =========================================
+   2. Success Modal Styles (สไตล์เฉพาะหน้าต่างผ่านเกณฑ์)
+   ========================================= */
+.success-modal {
+  text-align: center;
+  padding: 32px 24px !important;
+  max-width: 480px !important;
+  border-radius: 16px !important;
+}
+
+.success-icon-wrapper {
+  width: 72px;
+  height: 72px;
+  background-color: #dcfce7;
+  border: 3px solid #22c55e;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 20px auto;
+}
+
+.success-check-icon {
+  width: 38px;
+  height: 38px;
+  color: #16a34a;
+}
+
+.success-title {
+  color: #16a34a;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.success-desc {
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.course-highlight {
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.score-highlight {
+  font-weight: bold;
+  color: #16a34a;
+}
+
+.modal-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* =========================================
+   3. Buttons (ปุ่มกดต่างๆ)
+   ========================================= */
+.btn-view-pdf {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-view-pdf:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-close-modal {
+  background-color: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+.btn-danger-sm {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-danger-sm:hover {
+  background-color: #b91c1c;
+}
+
+.btn-secondary-sm {
+  background-color: #e2e8f0;
+  color: #475569;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-secondary-sm:hover {
+  background-color: #cbd5e1;
+}
+
 /* Buttons & UI Helpers */
 .btn-outline {
   border: 1px solid #cbd5e1;
@@ -1420,7 +1577,7 @@ html, body {
   }
 
   .stat-box {
-    padding: 12px 10px;
+    padding: 10px 8px;
     gap: 10px;
   }
 

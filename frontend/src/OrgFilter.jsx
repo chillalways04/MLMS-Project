@@ -331,6 +331,13 @@ function OrgFilter() {
     });
   }, [rawMembers, isAuthorized]);
 
+  // State สำหรับจัดการ Modal รายละเอียดภาพรวม
+const [isOverviewModalOpen, setIsOverviewModalOpen] = useState(false);
+
+// ฟังก์ชันเปิด/ปิด Modal
+const handleOpenOverviewModal = () => setIsOverviewModalOpen(true);
+const handleCloseOverviewModal = () => setIsOverviewModalOpen(false);
+
   // คำนวณ KPI สถิติ
   const totalEmployees = employeeList.length;
   const completedEmployees = employeeList.filter((e) => e.status === 'ครบถ้วน').length;
@@ -617,8 +624,8 @@ function OrgFilter() {
                   </div>
                 </div>
               </div>
-              <button className="sv-btn-action-primary" onClick={() => setActiveTab('all')}>ดูรายละเอียดทั้งหมด</button>
-            </div>
+              <button className="sv-btn-action-primary" onClick={handleOpenOverviewModal}>ดูรายละเอียดทั้งหมด</button>          
+                </div>
 
             <div className="sv-card">
               <div className="sv-card-header">
@@ -909,6 +916,89 @@ function OrgFilter() {
           </section>
         </>
       )}
+
+      {isOverviewModalOpen && (
+  <div className="modal-overlay">
+    <div className="modal-content overview-modal-content">
+      <div className="modal-header-flex">
+        <h3>📊 รายละเอียดสถานะการอบรมทั้งหมด (ภาพรวม)</h3>
+        <button className="modal-close-x" onClick={handleCloseOverviewModal}>✕</button>
+      </div>
+
+      {/* สรุปสถิติย่อใน Modal */}
+      <div className="overview-stats-grid">
+        <div className="stat-box green">
+          <span>ครบถ้วน</span>
+          <b>{completedEmployees} คน ({completePct}%)</b>
+        </div>
+        <div className="stat-box yellow">
+          <span>ใกล้ครบ</span>
+          <b>{nearCompleteEmployees} คน ({nearPct}%)</b>
+        </div>
+        <div className="stat-box blue">
+          <span>กำลังดำเนินการ</span>
+          <b>{inProgressEmployees} คน ({inProgressPct}%)</b>
+        </div>
+        <div className="stat-box gray">
+          <span>ยังไม่เริ่ม</span>
+          <b>{notStartedEmployees} คน ({notStartedPct}%)</b>
+        </div>
+      </div>
+
+      {/* ตารางแสดงรายชื่อพนักงานเบื้องต้น */}
+      <div className="overview-table-container">
+        <table className="overview-table">
+          <thead>
+            <tr>
+              <th>รหัสพนักงาน</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {employeeList.length > 0 ? (
+              employeeList.map((emp, index) => {
+                // กำหนดสีของ Badge ตามสถานะจริง
+                const getBadgeClass = (status) => {
+                  switch (status) {
+                    case 'ครบถ้วน': return 'green';
+                    case 'ใกล้ครบ': return 'yellow';
+                    case 'กำลังดำเนินการ': return 'blue';
+                    default: return 'gray';
+                  }
+                };
+
+                return (
+                  <tr key={emp.user_id || index}>
+                    <td>{emp.employee_code}</td>
+                    <td>{emp.first_name} {emp.last_name}</td>
+                    <td>
+                      <span className={`badge ${getBadgeClass(emp.status)}`}>
+                        {emp.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="3" style={{ textAlign: "center", color: "#64748b", padding: "16px" }}>
+                  ไม่พบข้อมูลพนักงานในระบบ
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
+        <button className="btn-secondary-sm" onClick={handleCloseOverviewModal}>
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

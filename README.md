@@ -65,7 +65,7 @@
 
 ---
 
-## 🛠 เทคโนโลยีที่ใช้พัฒนา (Tech Stack)
+## เทคโนโลยีที่ใช้พัฒนา (Tech Stack)
 
 ### **Front-end**
 - **React.js & JavaScript:** พัฒนาส่วนต่อประสานผู้ใช้แบบ Single Page Application (SPA)[cite: 5]
